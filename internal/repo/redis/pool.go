@@ -47,12 +47,16 @@ func (d *db) CreatePool(ctx context.Context, id uuid.UUID, userID uuid.UUID, rec
 		}
 
 		userPools = append(userPools, d.keyBuilder.Pool(id))
+		data, err = json.Marshal(userPools)
+		if err != nil {
+			return err
+		}
 
 		if err = d.SetPool(ctx, id, rec); err != nil {
 			return err
 		}
 
-		return tx.Set(ctx, key, userPools, 0).Err()
+		return tx.Set(ctx, key, data, 0).Err()
 	}, key)
 }
 
