@@ -1,0 +1,36 @@
+scalar Date
+
+type Query {
+    me: User
+    pools: [Pool!]!
+}
+
+type Mutation {
+    authApple(appleCode:String!, deviceID: ID!): Session!
+    addPool(name: String!, volume: Float!): Pool!
+}
+
+type Subscription {
+    "Subscription for tea addition."
+    onCreatePool: Pool!
+    "Subscription for tea update."
+    onUpdatePool: Pool!
+    "Subscription for tea remove."
+    onDeletePool: ID!
+}
+
+type Pool {
+    id: ID!
+    name: String!
+    volume: Float!
+}
+
+type Session {
+    token: String!
+    expiredAt: Date!
+}
+
+type User {
+    tokenExpiredAt: Date!
+    pools: [Pool!]!
+}

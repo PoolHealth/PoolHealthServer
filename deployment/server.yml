@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poolhealth
+  labels:
+    name: poolhealth
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: poolhealth
+  name: server
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      name: server
+      labels:
+        app: server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/poolhealth/poolhealthserver:v0.0.1
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 3
+          env:
+            - name: LOG_LEVEL
+              value: debug
+            - name: APPLE_AUTH_CLIENT_ID
+              value: "xax.PoolHealth"
+            - name: APPLE_AUTH_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: keyid
+                  name: apple-auth
+            - name: APPLE_AUTH_TEAM_ID
+              valueFrom:
+                secretKeyRef:
+                  key: teamid
+                  name: apple-auth
+            - name: APPLE_AUTH_SECRET_PATH
+              value: "/keys/AuthKey_T2P77U2R27.p8"
+          volumeMounts:
+            - name: keys
+              mountPath: /keys/
+      volumes:
+        - name: keys
+          secret:
+            secretName: apple-auth
+      imagePullSecrets:
+        - name: regcred
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: server
+  namespace: poolhealth
+  labels:
+    app: server
+spec:
+  selector:
+    app: server
+  ports:
+    - name: web
+      port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server-public
+  namespace: poolhealth
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: server
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: server
+  labels:
+    team: backend
+spec:
+  selector:
+    matchLabels:
+      app: server
+  endpoints:
+    - port: web
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: server
+  namespace: poolhealth
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - poolhealth.net
+      secretName: hello-kubernetes-tls
+  ingressClassName: nginx
+  rules:
+    - host: poolhealth.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: server-public
+                port:
+                  number: 80
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: poolhealth
+spec:
+  acme:
+    # Email address used for ACME registration
+    email: lueurxax@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Name of a secret used to store the ACME account private key
+      name: letsencrypt-prod-private-key
+    # Add a single challenge solver, HTTP01 using nginx
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
