@@ -126,6 +126,7 @@ func (a *auth) Auth(ctx context.Context, token string) (*common.Session, error) 
 		a.log.
 			WithField("description", resp.ErrorDescription).
 			WithField("error", resp.Error).
+			WithField("vreq", vReq).
 			Error("Error from apple on VerifyAppToken")
 
 		return nil, errors.New(resp.ErrorDescription)
@@ -136,7 +137,7 @@ func (a *auth) Auth(ctx context.Context, token string) (*common.Session, error) 
 		a.log.
 			WithField("id_token", resp.IDToken).
 			WithError(err).
-			Error("Error from apple on VerifyAppToken")
+			Error("Error from apple on GetClaims")
 
 		return nil, err
 	}
