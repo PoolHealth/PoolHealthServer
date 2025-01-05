@@ -70,6 +70,8 @@ spec:
                   name: apple-auth
             - name: APPLE_AUTH_SECRET_PATH
               value: "/keys/AuthKey_T2P77U2R27.p8"
+            - name: REDIS_ADDRESS
+              value: "keydb-headless:6379"
           volumeMounts:
             - name: keys
               mountPath: /keys/

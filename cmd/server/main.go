@@ -31,7 +31,7 @@ const (
 type configuration struct {
 	LoggerLevel  logrus.Level `envconfig:"LOG_LEVEL" default:"info"`
 	LogToEcs     bool         `envconfig:"LOG_TO_ECS" default:"false"`
-	RedisAddress string       `default:"localhost:6379"`
+	RedisAddress string       `envconfig:"REDIS_ADDRESS" default:"localhost:6379"`
 }
 
 func main() {
