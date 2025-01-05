@@ -123,11 +123,21 @@ func (a *auth) Auth(ctx context.Context, token string) (*common.Session, error) 
 	}
 
 	if resp.Error != "" {
+		a.log.
+			WithField("description", resp.ErrorDescription).
+			WithField("error", resp.Error).
+			Error("Error from apple on VerifyAppToken")
+
 		return nil, errors.New(resp.ErrorDescription)
 	}
 
 	claims, err := apple.GetClaims(resp.IDToken)
 	if err != nil {
+		a.log.
+			WithField("id_token", resp.IDToken).
+			WithError(err).
+			Error("Error from apple on VerifyAppToken")
+
 		return nil, err
 	}
 

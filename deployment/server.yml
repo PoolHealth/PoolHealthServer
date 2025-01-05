@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/poolhealth/poolhealthserver:v0.0.1
+          image: ghcr.io/poolhealth/poolhealthserver:v0.0.3
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -112,13 +112,13 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: server
+  name: poolhealth-server
   labels:
     team: backend
 spec:
   selector:
     matchLabels:
-      app: server
+      app: poolhealth-server
   endpoints:
     - port: web
 ---
