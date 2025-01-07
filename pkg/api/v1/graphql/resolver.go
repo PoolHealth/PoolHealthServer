@@ -24,12 +24,24 @@ type poolData interface {
 	SubscribeOnDelete(ctx context.Context) (<-chan uuid.UUID, error)
 }
 
+type measurementHistory interface {
+	CreateMeasurement(ctx context.Context, r common.Measurement) (common.Measurement, error)
+	QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Measurement, error)
+}
+
+type additivesHistory interface {
+	CreateAdditives(ctx context.Context, r *common.Additives) (*common.Additives, error)
+	QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Additives, error)
+}
+
 type auth interface {
 	Auth(ctx context.Context, token string) (*common.Session, error)
 }
 
 type Resolver struct {
 	poolData
+	measurementHistory
+	additivesHistory
 	auth
 
 	log logger
@@ -38,11 +50,15 @@ type Resolver struct {
 func NewResolver(
 	logger logger,
 	data poolData,
+	measurementHistory measurementHistory,
+	additivesHistory additivesHistory,
 	auth auth,
 ) *Resolver {
 	return &Resolver{
-		auth:     auth,
-		poolData: data,
-		log:      logger,
+		auth:               auth,
+		poolData:           data,
+		measurementHistory: measurementHistory,
+		additivesHistory:   additivesHistory,
+		log:                logger,
 	}
 }

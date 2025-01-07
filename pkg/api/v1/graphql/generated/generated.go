@@ -51,9 +51,29 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Additives struct {
+		CalciumHypochlorite65Percent func(childComplexity int) int
+		CreatedAt                    func(childComplexity int) int
+		Dichlor65Percent             func(childComplexity int) int
+		MultiActionTablets           func(childComplexity int) int
+		SodiumHypochlorite12Percent  func(childComplexity int) int
+		SodiumHypochlorite14Percent  func(childComplexity int) int
+		TCCA90PercentGranules        func(childComplexity int) int
+		TCCA90PercentTablets         func(childComplexity int) int
+	}
+
+	Measurement struct {
+		Alkalinity func(childComplexity int) int
+		Chlorine   func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		Ph         func(childComplexity int) int
+	}
+
 	Mutation struct {
-		AddPool   func(childComplexity int, name string, volume float64) int
-		AuthApple func(childComplexity int, appleCode string, deviceID common.ID) int
+		AddAdditives   func(childComplexity int, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) int
+		AddMeasurement func(childComplexity int, poolID common.ID, chlorine float64, ph float64, alkalinity float64) int
+		AddPool        func(childComplexity int, name string, volume float64) int
+		AuthApple      func(childComplexity int, appleCode string, deviceID common.ID) int
 	}
 
 	Pool struct {
@@ -63,8 +83,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Me    func(childComplexity int) int
-		Pools func(childComplexity int) int
+		EstimateChlorine     func(childComplexity int, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) int
+		HistoryOfAdditives   func(childComplexity int, poolID common.ID, order model.Order, offset *int, limit *int) int
+		HistoryOfMeasurement func(childComplexity int, poolID common.ID, order model.Order, offset *int, limit *int) int
+		Me                   func(childComplexity int) int
+		Pools                func(childComplexity int) int
 	}
 
 	Session struct {
@@ -87,10 +110,15 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	AuthApple(ctx context.Context, appleCode string, deviceID common.ID) (*model.Session, error)
 	AddPool(ctx context.Context, name string, volume float64) (*model.Pool, error)
+	AddMeasurement(ctx context.Context, poolID common.ID, chlorine float64, ph float64, alkalinity float64) (*model.Measurement, error)
+	AddAdditives(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (*model.Additives, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
 	Pools(ctx context.Context) ([]*model.Pool, error)
+	HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Measurement, error)
+	HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Additives, error)
+	EstimateChlorine(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (float64, error)
 }
 type SubscriptionResolver interface {
 	OnCreatePool(ctx context.Context) (<-chan *model.Pool, error)
@@ -119,6 +147,114 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Additives.calciumHypochlorite65Percent":
+		if e.complexity.Additives.CalciumHypochlorite65Percent == nil {
+			break
+		}
+
+		return e.complexity.Additives.CalciumHypochlorite65Percent(childComplexity), true
+
+	case "Additives.createdAt":
+		if e.complexity.Additives.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Additives.CreatedAt(childComplexity), true
+
+	case "Additives.dichlor65Percent":
+		if e.complexity.Additives.Dichlor65Percent == nil {
+			break
+		}
+
+		return e.complexity.Additives.Dichlor65Percent(childComplexity), true
+
+	case "Additives.multiActionTablets":
+		if e.complexity.Additives.MultiActionTablets == nil {
+			break
+		}
+
+		return e.complexity.Additives.MultiActionTablets(childComplexity), true
+
+	case "Additives.sodiumHypochlorite12Percent":
+		if e.complexity.Additives.SodiumHypochlorite12Percent == nil {
+			break
+		}
+
+		return e.complexity.Additives.SodiumHypochlorite12Percent(childComplexity), true
+
+	case "Additives.sodiumHypochlorite14Percent":
+		if e.complexity.Additives.SodiumHypochlorite14Percent == nil {
+			break
+		}
+
+		return e.complexity.Additives.SodiumHypochlorite14Percent(childComplexity), true
+
+	case "Additives.TCCA90PercentGranules":
+		if e.complexity.Additives.TCCA90PercentGranules == nil {
+			break
+		}
+
+		return e.complexity.Additives.TCCA90PercentGranules(childComplexity), true
+
+	case "Additives.TCCA90PercentTablets":
+		if e.complexity.Additives.TCCA90PercentTablets == nil {
+			break
+		}
+
+		return e.complexity.Additives.TCCA90PercentTablets(childComplexity), true
+
+	case "Measurement.alkalinity":
+		if e.complexity.Measurement.Alkalinity == nil {
+			break
+		}
+
+		return e.complexity.Measurement.Alkalinity(childComplexity), true
+
+	case "Measurement.chlorine":
+		if e.complexity.Measurement.Chlorine == nil {
+			break
+		}
+
+		return e.complexity.Measurement.Chlorine(childComplexity), true
+
+	case "Measurement.createdAt":
+		if e.complexity.Measurement.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Measurement.CreatedAt(childComplexity), true
+
+	case "Measurement.ph":
+		if e.complexity.Measurement.Ph == nil {
+			break
+		}
+
+		return e.complexity.Measurement.Ph(childComplexity), true
+
+	case "Mutation.addAdditives":
+		if e.complexity.Mutation.AddAdditives == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addAdditives_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddAdditives(childComplexity, args["poolID"].(common.ID), args["calciumHypochlorite65Percent"].(*float64), args["sodiumHypochlorite12Percent"].(*float64), args["sodiumHypochlorite14Percent"].(*float64), args["TCCA90PercentTablets"].(*float64), args["multiActionTablets"].(*float64), args["TCCA90PercentGranules"].(*float64), args["dichlor65Percent"].(*float64)), true
+
+	case "Mutation.addMeasurement":
+		if e.complexity.Mutation.AddMeasurement == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addMeasurement_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddMeasurement(childComplexity, args["poolID"].(common.ID), args["chlorine"].(float64), args["ph"].(float64), args["alkalinity"].(float64)), true
 
 	case "Mutation.addPool":
 		if e.complexity.Mutation.AddPool == nil {
@@ -164,6 +300,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Pool.Volume(childComplexity), true
+
+	case "Query.estimateChlorine":
+		if e.complexity.Query.EstimateChlorine == nil {
+			break
+		}
+
+		args, err := ec.field_Query_estimateChlorine_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EstimateChlorine(childComplexity, args["poolID"].(common.ID), args["calciumHypochlorite65Percent"].(*float64), args["sodiumHypochlorite12Percent"].(*float64), args["sodiumHypochlorite14Percent"].(*float64), args["TCCA90PercentTablets"].(*float64), args["multiActionTablets"].(*float64), args["TCCA90PercentGranules"].(*float64), args["dichlor65Percent"].(*float64)), true
+
+	case "Query.historyOfAdditives":
+		if e.complexity.Query.HistoryOfAdditives == nil {
+			break
+		}
+
+		args, err := ec.field_Query_historyOfAdditives_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.HistoryOfAdditives(childComplexity, args["poolID"].(common.ID), args["order"].(model.Order), args["offset"].(*int), args["limit"].(*int)), true
+
+	case "Query.historyOfMeasurement":
+		if e.complexity.Query.HistoryOfMeasurement == nil {
+			break
+		}
+
+		args, err := ec.field_Query_historyOfMeasurement_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.HistoryOfMeasurement(childComplexity, args["poolID"].(common.ID), args["order"].(model.Order), args["offset"].(*int), args["limit"].(*int)), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -354,11 +526,34 @@ var sources = []*ast.Source{
 type Query {
     me: User
     pools: [Pool!]!
+    historyOfMeasurement(poolID: ID!, order: Order!, offset: Int, limit: Int): [Measurement!]!
+    historyOfAdditives(poolID: ID!, order: Order!, offset: Int, limit: Int): [Additives!]!
+    estimateChlorine(
+        poolID: ID!,
+        calciumHypochlorite65Percent: Float,
+        sodiumHypochlorite12Percent: Float,
+        sodiumHypochlorite14Percent: Float,
+        TCCA90PercentTablets: Float,
+        multiActionTablets: Float,
+        TCCA90PercentGranules: Float,
+        dichlor65Percent: Float,
+    ): Float!
 }
 
 type Mutation {
     authApple(appleCode:String!, deviceID: ID!): Session!
     addPool(name: String!, volume: Float!): Pool!
+    addMeasurement(poolID: ID!, chlorine: Float!, ph: Float!, alkalinity: Float!): Measurement!
+    addAdditives(
+        poolID: ID!,
+        calciumHypochlorite65Percent: Float,
+        sodiumHypochlorite12Percent: Float,
+        sodiumHypochlorite14Percent: Float,
+        TCCA90PercentTablets: Float,
+        multiActionTablets: Float,
+        TCCA90PercentGranules: Float,
+        dichlor65Percent: Float,
+    ): Additives!
 }
 
 type Subscription {
@@ -385,13 +580,321 @@ type User {
     tokenExpiredAt: Date!
     pools: [Pool!]!
 }
-`, BuiltIn: false},
+
+type Measurement {
+    chlorine: Float!
+    ph: Float!
+    alkalinity: Float!
+    createdAt: Date!
+}
+
+type Additives {
+    calciumHypochlorite65Percent: Float
+    sodiumHypochlorite12Percent: Float
+    sodiumHypochlorite14Percent: Float
+    TCCA90PercentTablets: Float
+    multiActionTablets: Float
+    TCCA90PercentGranules: Float
+    dichlor65Percent: Float
+    createdAt: Date!
+}
+
+enum Order {
+    ASC
+    DESC
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_addAdditives_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_addAdditives_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Mutation_addAdditives_argsCalciumHypochlorite65Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["calciumHypochlorite65Percent"] = arg1
+	arg2, err := ec.field_Mutation_addAdditives_argsSodiumHypochlorite12Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sodiumHypochlorite12Percent"] = arg2
+	arg3, err := ec.field_Mutation_addAdditives_argsSodiumHypochlorite14Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sodiumHypochlorite14Percent"] = arg3
+	arg4, err := ec.field_Mutation_addAdditives_argsTCCA90PercentTablets(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["TCCA90PercentTablets"] = arg4
+	arg5, err := ec.field_Mutation_addAdditives_argsMultiActionTablets(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["multiActionTablets"] = arg5
+	arg6, err := ec.field_Mutation_addAdditives_argsTCCA90PercentGranules(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["TCCA90PercentGranules"] = arg6
+	arg7, err := ec.field_Mutation_addAdditives_argsDichlor65Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dichlor65Percent"] = arg7
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_addAdditives_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsCalciumHypochlorite65Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["calciumHypochlorite65Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("calciumHypochlorite65Percent"))
+	if tmp, ok := rawArgs["calciumHypochlorite65Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsSodiumHypochlorite12Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["sodiumHypochlorite12Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sodiumHypochlorite12Percent"))
+	if tmp, ok := rawArgs["sodiumHypochlorite12Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsSodiumHypochlorite14Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["sodiumHypochlorite14Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sodiumHypochlorite14Percent"))
+	if tmp, ok := rawArgs["sodiumHypochlorite14Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsTCCA90PercentTablets(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["TCCA90PercentTablets"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("TCCA90PercentTablets"))
+	if tmp, ok := rawArgs["TCCA90PercentTablets"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsMultiActionTablets(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["multiActionTablets"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("multiActionTablets"))
+	if tmp, ok := rawArgs["multiActionTablets"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsTCCA90PercentGranules(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["TCCA90PercentGranules"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("TCCA90PercentGranules"))
+	if tmp, ok := rawArgs["TCCA90PercentGranules"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addAdditives_argsDichlor65Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["dichlor65Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dichlor65Percent"))
+	if tmp, ok := rawArgs["dichlor65Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addMeasurement_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_addMeasurement_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Mutation_addMeasurement_argsChlorine(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["chlorine"] = arg1
+	arg2, err := ec.field_Mutation_addMeasurement_argsPh(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ph"] = arg2
+	arg3, err := ec.field_Mutation_addMeasurement_argsAlkalinity(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["alkalinity"] = arg3
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_addMeasurement_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addMeasurement_argsChlorine(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (float64, error) {
+	if _, ok := rawArgs["chlorine"]; !ok {
+		var zeroVal float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("chlorine"))
+	if tmp, ok := rawArgs["chlorine"]; ok {
+		return ec.unmarshalNFloat2float64(ctx, tmp)
+	}
+
+	var zeroVal float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addMeasurement_argsPh(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (float64, error) {
+	if _, ok := rawArgs["ph"]; !ok {
+		var zeroVal float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ph"))
+	if tmp, ok := rawArgs["ph"]; ok {
+		return ec.unmarshalNFloat2float64(ctx, tmp)
+	}
+
+	var zeroVal float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addMeasurement_argsAlkalinity(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (float64, error) {
+	if _, ok := rawArgs["alkalinity"]; !ok {
+		var zeroVal float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("alkalinity"))
+	if tmp, ok := rawArgs["alkalinity"]; ok {
+		return ec.unmarshalNFloat2float64(ctx, tmp)
+	}
+
+	var zeroVal float64
+	return zeroVal, nil
+}
 
 func (ec *executionContext) field_Mutation_addPool_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -523,6 +1026,389 @@ func (ec *executionContext) field_Query___type_argsName(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Query_estimateChlorine_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_estimateChlorine_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Query_estimateChlorine_argsCalciumHypochlorite65Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["calciumHypochlorite65Percent"] = arg1
+	arg2, err := ec.field_Query_estimateChlorine_argsSodiumHypochlorite12Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sodiumHypochlorite12Percent"] = arg2
+	arg3, err := ec.field_Query_estimateChlorine_argsSodiumHypochlorite14Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sodiumHypochlorite14Percent"] = arg3
+	arg4, err := ec.field_Query_estimateChlorine_argsTCCA90PercentTablets(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["TCCA90PercentTablets"] = arg4
+	arg5, err := ec.field_Query_estimateChlorine_argsMultiActionTablets(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["multiActionTablets"] = arg5
+	arg6, err := ec.field_Query_estimateChlorine_argsTCCA90PercentGranules(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["TCCA90PercentGranules"] = arg6
+	arg7, err := ec.field_Query_estimateChlorine_argsDichlor65Percent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dichlor65Percent"] = arg7
+	return args, nil
+}
+func (ec *executionContext) field_Query_estimateChlorine_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsCalciumHypochlorite65Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["calciumHypochlorite65Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("calciumHypochlorite65Percent"))
+	if tmp, ok := rawArgs["calciumHypochlorite65Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsSodiumHypochlorite12Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["sodiumHypochlorite12Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sodiumHypochlorite12Percent"))
+	if tmp, ok := rawArgs["sodiumHypochlorite12Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsSodiumHypochlorite14Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["sodiumHypochlorite14Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sodiumHypochlorite14Percent"))
+	if tmp, ok := rawArgs["sodiumHypochlorite14Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsTCCA90PercentTablets(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["TCCA90PercentTablets"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("TCCA90PercentTablets"))
+	if tmp, ok := rawArgs["TCCA90PercentTablets"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsMultiActionTablets(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["multiActionTablets"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("multiActionTablets"))
+	if tmp, ok := rawArgs["multiActionTablets"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsTCCA90PercentGranules(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["TCCA90PercentGranules"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("TCCA90PercentGranules"))
+	if tmp, ok := rawArgs["TCCA90PercentGranules"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateChlorine_argsDichlor65Percent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*float64, error) {
+	if _, ok := rawArgs["dichlor65Percent"]; !ok {
+		var zeroVal *float64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dichlor65Percent"))
+	if tmp, ok := rawArgs["dichlor65Percent"]; ok {
+		return ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+	}
+
+	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfAdditives_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_historyOfAdditives_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Query_historyOfAdditives_argsOrder(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["order"] = arg1
+	arg2, err := ec.field_Query_historyOfAdditives_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
+	arg3, err := ec.field_Query_historyOfAdditives_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg3
+	return args, nil
+}
+func (ec *executionContext) field_Query_historyOfAdditives_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfAdditives_argsOrder(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.Order, error) {
+	if _, ok := rawArgs["order"]; !ok {
+		var zeroVal model.Order
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+	if tmp, ok := rawArgs["order"]; ok {
+		return ec.unmarshalNOrder2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐOrder(ctx, tmp)
+	}
+
+	var zeroVal model.Order
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfAdditives_argsOffset(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["offset"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+	if tmp, ok := rawArgs["offset"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfAdditives_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfMeasurement_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_historyOfMeasurement_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Query_historyOfMeasurement_argsOrder(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["order"] = arg1
+	arg2, err := ec.field_Query_historyOfMeasurement_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
+	arg3, err := ec.field_Query_historyOfMeasurement_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg3
+	return args, nil
+}
+func (ec *executionContext) field_Query_historyOfMeasurement_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfMeasurement_argsOrder(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.Order, error) {
+	if _, ok := rawArgs["order"]; !ok {
+		var zeroVal model.Order
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+	if tmp, ok := rawArgs["order"]; ok {
+		return ec.unmarshalNOrder2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐOrder(ctx, tmp)
+	}
+
+	var zeroVal model.Order
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfMeasurement_argsOffset(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["offset"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+	if tmp, ok := rawArgs["offset"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_historyOfMeasurement_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -586,6 +1472,513 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Additives_calciumHypochlorite65Percent(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_calciumHypochlorite65Percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CalciumHypochlorite65Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_calciumHypochlorite65Percent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_sodiumHypochlorite12Percent(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_sodiumHypochlorite12Percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SodiumHypochlorite12Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_sodiumHypochlorite12Percent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_sodiumHypochlorite14Percent(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_sodiumHypochlorite14Percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SodiumHypochlorite14Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_sodiumHypochlorite14Percent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_TCCA90PercentTablets(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_TCCA90PercentTablets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TCCA90PercentTablets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_TCCA90PercentTablets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_multiActionTablets(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_multiActionTablets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MultiActionTablets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_multiActionTablets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_TCCA90PercentGranules(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_TCCA90PercentGranules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TCCA90PercentGranules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_TCCA90PercentGranules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_dichlor65Percent(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_dichlor65Percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dichlor65Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_dichlor65Percent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Additives_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Additives) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Additives_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDate2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Additives_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Additives",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Date does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Measurement_chlorine(ctx context.Context, field graphql.CollectedField, obj *model.Measurement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Measurement_chlorine(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Chlorine, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Measurement_chlorine(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Measurement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Measurement_ph(ctx context.Context, field graphql.CollectedField, obj *model.Measurement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Measurement_ph(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ph, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Measurement_ph(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Measurement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Measurement_alkalinity(ctx context.Context, field graphql.CollectedField, obj *model.Measurement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Measurement_alkalinity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alkalinity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Measurement_alkalinity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Measurement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Measurement_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Measurement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Measurement_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDate2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Measurement_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Measurement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Date does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Mutation_authApple(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_authApple(ctx, field)
@@ -705,6 +2098,144 @@ func (ec *executionContext) fieldContext_Mutation_addPool(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_addPool_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addMeasurement(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_addMeasurement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddMeasurement(rctx, fc.Args["poolID"].(common.ID), fc.Args["chlorine"].(float64), fc.Args["ph"].(float64), fc.Args["alkalinity"].(float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Measurement)
+	fc.Result = res
+	return ec.marshalNMeasurement2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addMeasurement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "chlorine":
+				return ec.fieldContext_Measurement_chlorine(ctx, field)
+			case "ph":
+				return ec.fieldContext_Measurement_ph(ctx, field)
+			case "alkalinity":
+				return ec.fieldContext_Measurement_alkalinity(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Measurement_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Measurement", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addMeasurement_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addAdditives(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_addAdditives(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddAdditives(rctx, fc.Args["poolID"].(common.ID), fc.Args["calciumHypochlorite65Percent"].(*float64), fc.Args["sodiumHypochlorite12Percent"].(*float64), fc.Args["sodiumHypochlorite14Percent"].(*float64), fc.Args["TCCA90PercentTablets"].(*float64), fc.Args["multiActionTablets"].(*float64), fc.Args["TCCA90PercentGranules"].(*float64), fc.Args["dichlor65Percent"].(*float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Additives)
+	fc.Result = res
+	return ec.marshalNAdditives2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditives(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addAdditives(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "calciumHypochlorite65Percent":
+				return ec.fieldContext_Additives_calciumHypochlorite65Percent(ctx, field)
+			case "sodiumHypochlorite12Percent":
+				return ec.fieldContext_Additives_sodiumHypochlorite12Percent(ctx, field)
+			case "sodiumHypochlorite14Percent":
+				return ec.fieldContext_Additives_sodiumHypochlorite14Percent(ctx, field)
+			case "TCCA90PercentTablets":
+				return ec.fieldContext_Additives_TCCA90PercentTablets(ctx, field)
+			case "multiActionTablets":
+				return ec.fieldContext_Additives_multiActionTablets(ctx, field)
+			case "TCCA90PercentGranules":
+				return ec.fieldContext_Additives_TCCA90PercentGranules(ctx, field)
+			case "dichlor65Percent":
+				return ec.fieldContext_Additives_dichlor65Percent(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Additives_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Additives", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addAdditives_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -938,6 +2469,199 @@ func (ec *executionContext) fieldContext_Query_pools(_ context.Context, field gr
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Pool", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_historyOfMeasurement(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_historyOfMeasurement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HistoryOfMeasurement(rctx, fc.Args["poolID"].(common.ID), fc.Args["order"].(model.Order), fc.Args["offset"].(*int), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Measurement)
+	fc.Result = res
+	return ec.marshalNMeasurement2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurementᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_historyOfMeasurement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "chlorine":
+				return ec.fieldContext_Measurement_chlorine(ctx, field)
+			case "ph":
+				return ec.fieldContext_Measurement_ph(ctx, field)
+			case "alkalinity":
+				return ec.fieldContext_Measurement_alkalinity(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Measurement_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Measurement", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_historyOfMeasurement_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_historyOfAdditives(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_historyOfAdditives(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HistoryOfAdditives(rctx, fc.Args["poolID"].(common.ID), fc.Args["order"].(model.Order), fc.Args["offset"].(*int), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Additives)
+	fc.Result = res
+	return ec.marshalNAdditives2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditivesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_historyOfAdditives(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "calciumHypochlorite65Percent":
+				return ec.fieldContext_Additives_calciumHypochlorite65Percent(ctx, field)
+			case "sodiumHypochlorite12Percent":
+				return ec.fieldContext_Additives_sodiumHypochlorite12Percent(ctx, field)
+			case "sodiumHypochlorite14Percent":
+				return ec.fieldContext_Additives_sodiumHypochlorite14Percent(ctx, field)
+			case "TCCA90PercentTablets":
+				return ec.fieldContext_Additives_TCCA90PercentTablets(ctx, field)
+			case "multiActionTablets":
+				return ec.fieldContext_Additives_multiActionTablets(ctx, field)
+			case "TCCA90PercentGranules":
+				return ec.fieldContext_Additives_TCCA90PercentGranules(ctx, field)
+			case "dichlor65Percent":
+				return ec.fieldContext_Additives_dichlor65Percent(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Additives_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Additives", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_historyOfAdditives_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_estimateChlorine(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_estimateChlorine(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EstimateChlorine(rctx, fc.Args["poolID"].(common.ID), fc.Args["calciumHypochlorite65Percent"].(*float64), fc.Args["sodiumHypochlorite12Percent"].(*float64), fc.Args["sodiumHypochlorite14Percent"].(*float64), fc.Args["TCCA90PercentTablets"].(*float64), fc.Args["multiActionTablets"].(*float64), fc.Args["TCCA90PercentGranules"].(*float64), fc.Args["dichlor65Percent"].(*float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_estimateChlorine(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_estimateChlorine_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3226,6 +4950,113 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** object.gotpl ****************************
 
+var additivesImplementors = []string{"Additives"}
+
+func (ec *executionContext) _Additives(ctx context.Context, sel ast.SelectionSet, obj *model.Additives) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, additivesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Additives")
+		case "calciumHypochlorite65Percent":
+			out.Values[i] = ec._Additives_calciumHypochlorite65Percent(ctx, field, obj)
+		case "sodiumHypochlorite12Percent":
+			out.Values[i] = ec._Additives_sodiumHypochlorite12Percent(ctx, field, obj)
+		case "sodiumHypochlorite14Percent":
+			out.Values[i] = ec._Additives_sodiumHypochlorite14Percent(ctx, field, obj)
+		case "TCCA90PercentTablets":
+			out.Values[i] = ec._Additives_TCCA90PercentTablets(ctx, field, obj)
+		case "multiActionTablets":
+			out.Values[i] = ec._Additives_multiActionTablets(ctx, field, obj)
+		case "TCCA90PercentGranules":
+			out.Values[i] = ec._Additives_TCCA90PercentGranules(ctx, field, obj)
+		case "dichlor65Percent":
+			out.Values[i] = ec._Additives_dichlor65Percent(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Additives_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var measurementImplementors = []string{"Measurement"}
+
+func (ec *executionContext) _Measurement(ctx context.Context, sel ast.SelectionSet, obj *model.Measurement) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, measurementImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Measurement")
+		case "chlorine":
+			out.Values[i] = ec._Measurement_chlorine(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ph":
+			out.Values[i] = ec._Measurement_ph(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "alkalinity":
+			out.Values[i] = ec._Measurement_alkalinity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Measurement_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3255,6 +5086,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "addPool":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_addPool(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addMeasurement":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addMeasurement(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addAdditives":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addAdditives(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -3379,6 +5224,72 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_pools(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "historyOfMeasurement":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_historyOfMeasurement(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "historyOfAdditives":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_historyOfAdditives(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "estimateChlorine":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_estimateChlorine(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3891,6 +5802,64 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAdditives2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditives(ctx context.Context, sel ast.SelectionSet, v model.Additives) graphql.Marshaler {
+	return ec._Additives(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAdditives2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditivesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Additives) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAdditives2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditives(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAdditives2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐAdditives(ctx context.Context, sel ast.SelectionSet, v *model.Additives) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Additives(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3943,6 +5912,74 @@ func (ec *executionContext) unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthS
 }
 
 func (ec *executionContext) marshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx context.Context, sel ast.SelectionSet, v common.ID) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNMeasurement2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurement(ctx context.Context, sel ast.SelectionSet, v model.Measurement) graphql.Marshaler {
+	return ec._Measurement(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMeasurement2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurementᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Measurement) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMeasurement2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurement(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMeasurement2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐMeasurement(ctx context.Context, sel ast.SelectionSet, v *model.Measurement) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Measurement(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNOrder2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐOrder(ctx context.Context, v any) (model.Order, error) {
+	var res model.Order
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrder2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋmodelsᚐOrder(ctx context.Context, sel ast.SelectionSet, v model.Order) graphql.Marshaler {
 	return v
 }
 
@@ -4309,6 +6346,38 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

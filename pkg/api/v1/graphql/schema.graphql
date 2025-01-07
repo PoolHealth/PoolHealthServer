@@ -3,11 +3,34 @@ scalar Date
 type Query {
     me: User
     pools: [Pool!]!
+    historyOfMeasurement(poolID: ID!, order: Order!, offset: Int, limit: Int): [Measurement!]!
+    historyOfAdditives(poolID: ID!, order: Order!, offset: Int, limit: Int): [Additives!]!
+    estimateChlorine(
+        poolID: ID!,
+        calciumHypochlorite65Percent: Float,
+        sodiumHypochlorite12Percent: Float,
+        sodiumHypochlorite14Percent: Float,
+        TCCA90PercentTablets: Float,
+        multiActionTablets: Float,
+        TCCA90PercentGranules: Float,
+        dichlor65Percent: Float,
+    ): Float!
 }
 
 type Mutation {
     authApple(appleCode:String!, deviceID: ID!): Session!
     addPool(name: String!, volume: Float!): Pool!
+    addMeasurement(poolID: ID!, chlorine: Float!, ph: Float!, alkalinity: Float!): Measurement!
+    addAdditives(
+        poolID: ID!,
+        calciumHypochlorite65Percent: Float,
+        sodiumHypochlorite12Percent: Float,
+        sodiumHypochlorite14Percent: Float,
+        TCCA90PercentTablets: Float,
+        multiActionTablets: Float,
+        TCCA90PercentGranules: Float,
+        dichlor65Percent: Float,
+    ): Additives!
 }
 
 type Subscription {
@@ -33,4 +56,27 @@ type Session {
 type User {
     tokenExpiredAt: Date!
     pools: [Pool!]!
+}
+
+type Measurement {
+    chlorine: Float!
+    ph: Float!
+    alkalinity: Float!
+    createdAt: Date!
+}
+
+type Additives {
+    calciumHypochlorite65Percent: Float
+    sodiumHypochlorite12Percent: Float
+    sodiumHypochlorite14Percent: Float
+    TCCA90PercentTablets: Float
+    multiActionTablets: Float
+    TCCA90PercentGranules: Float
+    dichlor65Percent: Float
+    createdAt: Date!
+}
+
+enum Order {
+    ASC
+    DESC
 }

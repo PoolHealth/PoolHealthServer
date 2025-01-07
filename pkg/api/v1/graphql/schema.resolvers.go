@@ -6,7 +6,10 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
+	null "github.com/guregu/null/v5"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	rootCommon "github.com/PoolHealth/PoolHealthServer/common"
@@ -45,6 +48,64 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 	return model.PoolFromCommon(pool), nil
 }
 
+// AddMeasurement is the resolver for the addMeasurement field.
+func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine float64, ph float64, alkalinity float64) (*model.Measurement, error) {
+	res, err := r.measurementHistory.CreateMeasurement(ctx, rootCommon.Measurement{
+		PoolID:     uuid.UUID(poolID),
+		Chlorine:   null.FloatFrom(chlorine),
+		PH:         null.FloatFrom(ph),
+		Alkalinity: null.FloatFrom(alkalinity),
+	})
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.MeasurementFromCommon(res), nil
+}
+
+// AddAdditives is the resolver for the addAdditives field.
+func (r *mutationResolver) AddAdditives(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (*model.Additives, error) {
+	ad := &rootCommon.Additives{
+		PoolID:   uuid.UUID(poolID),
+		Products: make(map[rootCommon.ChemicalProduct]float64),
+	}
+
+	if calciumHypochlorite65Percent != nil {
+		ad.Products[rootCommon.CalciumHypochlorite65Percent] = *calciumHypochlorite65Percent
+	}
+
+	if sodiumHypochlorite12Percent != nil {
+		ad.Products[rootCommon.SodiumHypochlorite12Percent] = *sodiumHypochlorite12Percent
+	}
+
+	if sodiumHypochlorite14Percent != nil {
+		ad.Products[rootCommon.SodiumHypochlorite14Percent] = *sodiumHypochlorite14Percent
+	}
+
+	if tCCA90PercentTablets != nil {
+		ad.Products[rootCommon.TCCA90PercentTablets] = *tCCA90PercentTablets
+	}
+
+	if multiActionTablets != nil {
+		ad.Products[rootCommon.MultiActionTablets] = *multiActionTablets
+	}
+
+	if tCCA90PercentGranules != nil {
+		ad.Products[rootCommon.TCCA90PercentGranules] = *tCCA90PercentGranules
+	}
+
+	if dichlor65Percent != nil {
+		ad.Products[rootCommon.Dichlor65Percent] = *dichlor65Percent
+	}
+
+	res, err := r.additivesHistory.CreateAdditives(ctx, ad)
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.AdditivesFromCommon(res), nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	user, err := authPkg.GetUser(ctx)
@@ -71,6 +132,41 @@ func (r *queryResolver) Pools(ctx context.Context) ([]*model.Pool, error) {
 	}
 
 	return result, nil
+}
+
+// HistoryOfMeasurement is the resolver for the historyOfMeasurement field.
+func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Measurement, error) {
+	res, err := r.measurementHistory.QueryMeasurement(ctx, uuid.UUID(poolID), order.ToCommon(), offset, limit)
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	result := make([]*model.Measurement, len(res))
+	for i, m := range res {
+		result[i] = model.MeasurementFromCommon(m)
+	}
+
+	return result, nil
+}
+
+// HistoryOfAdditives is the resolver for the historyOfAdditives field.
+func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Additives, error) {
+	res, err := r.additivesHistory.QueryAdditives(ctx, uuid.UUID(poolID), order.ToCommon(), offset, limit)
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	result := make([]*model.Additives, len(res))
+	for i, a := range res {
+		result[i] = model.AdditivesFromCommon(&a)
+	}
+
+	return result, nil
+}
+
+// EstimateChlorine is the resolver for the estimateChlorine field.
+func (r *queryResolver) EstimateChlorine(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (float64, error) {
+	panic(fmt.Errorf("not implemented: EstimateChlorine - estimateChlorine"))
 }
 
 // OnCreatePool is the resolver for the onCreatePool field.

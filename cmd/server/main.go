@@ -14,8 +14,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/ecslogrus"
 
+	"github.com/PoolHealth/PoolHealthServer/internal/additiveshistory"
 	"github.com/PoolHealth/PoolHealthServer/internal/auth"
+	"github.com/PoolHealth/PoolHealthServer/internal/measurementhistory"
 	"github.com/PoolHealth/PoolHealthServer/internal/poolmanager"
+	"github.com/PoolHealth/PoolHealthServer/internal/repo/influx"
 	repoRedis "github.com/PoolHealth/PoolHealthServer/internal/repo/redis"
 	"github.com/PoolHealth/PoolHealthServer/internal/server"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
@@ -32,6 +35,11 @@ type configuration struct {
 	LoggerLevel  logrus.Level `envconfig:"LOG_LEVEL" default:"info"`
 	LogToEcs     bool         `envconfig:"LOG_TO_ECS" default:"false"`
 	RedisAddress string       `envconfig:"REDIS_ADDRESS" default:"localhost:6379"`
+
+	InfluxDBAddress string `envconfig:"INFLUXDB_ADDRESS" default:"http://localhost:8086"`
+	InfluxDBToken   string `envconfig:"INFLUXDB_TOKEN" default:""`
+	InfluxDBOrg     string `envconfig:"INFLUXDB_ORG" default:"poolhealth"`
+	InfluxDBBucket  string `envconfig:"INFLUXDB_BUCKET" default:"history"`
 }
 
 func main() {
@@ -80,8 +88,16 @@ func main() {
 		panic(err)
 	}
 
+	idb, err := influx.New(cfg.InfluxDBAddress, cfg.InfluxDBToken, cfg.InfluxDBOrg, cfg.InfluxDBBucket, logger.WithField(pkgKey, "influx"))
+	if err != nil {
+		panic(err)
+	}
+
+	mhistory := measurementhistory.NewMeasurementHistory(idb, logger.WithField(pkgKey, "measurementhistory"))
+	ahistory := additiveshistory.NewAdditivesHistory(idb, logger.WithField(pkgKey, "additiveshistory"))
+
 	resolvers := graphql.NewResolver(
-		logger.WithField(pkgKey, "graphql"), poolManager, authM,
+		logger.WithField(pkgKey, "graphql"), poolManager, mhistory, ahistory, authM,
 	)
 
 	s := server.NewServer(

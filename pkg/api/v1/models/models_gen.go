@@ -3,10 +3,31 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
 )
+
+type Additives struct {
+	CalciumHypochlorite65Percent *float64  `json:"calciumHypochlorite65Percent,omitempty"`
+	SodiumHypochlorite12Percent  *float64  `json:"sodiumHypochlorite12Percent,omitempty"`
+	SodiumHypochlorite14Percent  *float64  `json:"sodiumHypochlorite14Percent,omitempty"`
+	TCCA90PercentTablets         *float64  `json:"TCCA90PercentTablets,omitempty"`
+	MultiActionTablets           *float64  `json:"multiActionTablets,omitempty"`
+	TCCA90PercentGranules        *float64  `json:"TCCA90PercentGranules,omitempty"`
+	Dichlor65Percent             *float64  `json:"dichlor65Percent,omitempty"`
+	CreatedAt                    time.Time `json:"createdAt"`
+}
+
+type Measurement struct {
+	Chlorine   float64   `json:"chlorine"`
+	Ph         float64   `json:"ph"`
+	Alkalinity float64   `json:"alkalinity"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
 
 type Mutation struct {
 }
@@ -31,4 +52,45 @@ type Subscription struct {
 type User struct {
 	TokenExpiredAt time.Time `json:"tokenExpiredAt"`
 	Pools          []*Pool   `json:"pools"`
+}
+
+type Order string
+
+const (
+	OrderAsc  Order = "ASC"
+	OrderDesc Order = "DESC"
+)
+
+var AllOrder = []Order{
+	OrderAsc,
+	OrderDesc,
+}
+
+func (e Order) IsValid() bool {
+	switch e {
+	case OrderAsc, OrderDesc:
+		return true
+	}
+	return false
+}
+
+func (e Order) String() string {
+	return string(e)
+}
+
+func (e *Order) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Order(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Order", str)
+	}
+	return nil
+}
+
+func (e Order) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
