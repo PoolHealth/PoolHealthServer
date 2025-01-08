@@ -6,7 +6,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	null "github.com/guregu/null/v5"
@@ -50,6 +49,10 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 
 // AddMeasurement is the resolver for the addMeasurement field.
 func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine float64, ph float64, alkalinity float64) (*model.Measurement, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
 	res, err := r.measurementHistory.CreateMeasurement(ctx, rootCommon.Measurement{
 		PoolID:     uuid.UUID(poolID),
 		Chlorine:   null.FloatFrom(chlorine),
@@ -65,6 +68,10 @@ func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID,
 
 // AddAdditives is the resolver for the addAdditives field.
 func (r *mutationResolver) AddAdditives(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (*model.Additives, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
 	ad := &rootCommon.Additives{
 		PoolID:   uuid.UUID(poolID),
 		Products: make(map[rootCommon.ChemicalProduct]float64),
@@ -136,6 +143,10 @@ func (r *queryResolver) Pools(ctx context.Context) ([]*model.Pool, error) {
 
 // HistoryOfMeasurement is the resolver for the historyOfMeasurement field.
 func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Measurement, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
 	res, err := r.measurementHistory.QueryMeasurement(ctx, uuid.UUID(poolID), order.ToCommon(), offset, limit)
 	if err != nil {
 		return nil, castGQLError(ctx, err)
@@ -151,6 +162,10 @@ func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.
 
 // HistoryOfAdditives is the resolver for the historyOfAdditives field.
 func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Additives, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
 	res, err := r.additivesHistory.QueryAdditives(ctx, uuid.UUID(poolID), order.ToCommon(), offset, limit)
 	if err != nil {
 		return nil, castGQLError(ctx, err)
@@ -166,7 +181,29 @@ func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID
 
 // EstimateChlorine is the resolver for the estimateChlorine field.
 func (r *queryResolver) EstimateChlorine(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (float64, error) {
-	panic(fmt.Errorf("not implemented: EstimateChlorine - estimateChlorine"))
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return 0, err
+	}
+
+	return r.estimator.EstimateChlorine(
+		ctx, uuid.UUID(poolID),
+		null.FloatFromPtr(calciumHypochlorite65Percent),
+		null.FloatFromPtr(sodiumHypochlorite12Percent),
+		null.FloatFromPtr(sodiumHypochlorite14Percent),
+		null.FloatFromPtr(tCCA90PercentTablets),
+		null.FloatFromPtr(multiActionTablets),
+		null.FloatFromPtr(tCCA90PercentGranules),
+		null.FloatFromPtr(dichlor65Percent),
+	)
+}
+
+// EstimateLastChlorine is the resolver for the estimateLastChlorine field.
+func (r *queryResolver) EstimateLastChlorine(ctx context.Context, poolID common.ID) (float64, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return 0, err
+	}
+
+	return r.estimator.EstimateLastChlorine(ctx, uuid.UUID(poolID))
 }
 
 // OnCreatePool is the resolver for the onCreatePool field.

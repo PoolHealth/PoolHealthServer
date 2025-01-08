@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/poolhealth/poolhealthserver:v0.0.5
+          image: ghcr.io/poolhealth/poolhealthserver:v0.1.0
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -72,6 +72,13 @@ spec:
               value: "/keys/AuthKey_T2P77U2R27.p8"
             - name: REDIS_ADDRESS
               value: "keydb-headless:6379"
+            - name: INFLUXDB_ADDRESS
+              value: http://influxdb-influxdb2
+            - name: INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: admin-token
+                  name: influxdb-influxdb2-auth
           volumeMounts:
             - name: keys
               mountPath: /keys/

@@ -13,6 +13,7 @@ type Manager interface {
 	Create(ctx context.Context, userID uuid.UUID, data *common.PoolData) (pool *common.Pool, err error)
 	Update(ctx context.Context, id uuid.UUID, rec *common.PoolData) (record *common.Pool, err error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 	List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 	SubscribeOnCreate(ctx context.Context) (<-chan *common.Pool, error)
 	SubscribeOnUpdate(ctx context.Context) (<-chan *common.Pool, error)
@@ -61,6 +62,11 @@ func (m *manager) Update(ctx context.Context, id uuid.UUID, rec *common.PoolData
 
 func (m *manager) Delete(ctx context.Context, id uuid.UUID) error {
 	return m.repo.DeletePool(ctx, id)
+}
+
+func (m *manager) Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (m *manager) List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error) {

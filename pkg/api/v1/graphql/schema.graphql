@@ -15,6 +15,7 @@ type Query {
         TCCA90PercentGranules: Float,
         dichlor65Percent: Float,
     ): Float!
+    estimateLastChlorine(poolID: ID!): Float!
 }
 
 type Mutation {

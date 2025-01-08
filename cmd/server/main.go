@@ -16,6 +16,7 @@ import (
 
 	"github.com/PoolHealth/PoolHealthServer/internal/additiveshistory"
 	"github.com/PoolHealth/PoolHealthServer/internal/auth"
+	"github.com/PoolHealth/PoolHealthServer/internal/estimator"
 	"github.com/PoolHealth/PoolHealthServer/internal/measurementhistory"
 	"github.com/PoolHealth/PoolHealthServer/internal/poolmanager"
 	"github.com/PoolHealth/PoolHealthServer/internal/repo/influx"
@@ -96,8 +97,10 @@ func main() {
 	mhistory := measurementhistory.NewMeasurementHistory(idb, logger.WithField(pkgKey, "measurementhistory"))
 	ahistory := additiveshistory.NewAdditivesHistory(idb, logger.WithField(pkgKey, "additiveshistory"))
 
+	est := estimator.NewEstimator(repo, idb, logger.WithField(pkgKey, "estimator"))
+
 	resolvers := graphql.NewResolver(
-		logger.WithField(pkgKey, "graphql"), poolManager, mhistory, ahistory, authM,
+		logger.WithField(pkgKey, "graphql"), poolManager, mhistory, ahistory, est, authM,
 	)
 
 	s := server.NewServer(

@@ -84,6 +84,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		EstimateChlorine     func(childComplexity int, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) int
+		EstimateLastChlorine func(childComplexity int, poolID common.ID) int
 		HistoryOfAdditives   func(childComplexity int, poolID common.ID, order model.Order, offset *int, limit *int) int
 		HistoryOfMeasurement func(childComplexity int, poolID common.ID, order model.Order, offset *int, limit *int) int
 		Me                   func(childComplexity int) int
@@ -119,6 +120,7 @@ type QueryResolver interface {
 	HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Measurement, error)
 	HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Additives, error)
 	EstimateChlorine(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (float64, error)
+	EstimateLastChlorine(ctx context.Context, poolID common.ID) (float64, error)
 }
 type SubscriptionResolver interface {
 	OnCreatePool(ctx context.Context) (<-chan *model.Pool, error)
@@ -312,6 +314,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.EstimateChlorine(childComplexity, args["poolID"].(common.ID), args["calciumHypochlorite65Percent"].(*float64), args["sodiumHypochlorite12Percent"].(*float64), args["sodiumHypochlorite14Percent"].(*float64), args["TCCA90PercentTablets"].(*float64), args["multiActionTablets"].(*float64), args["TCCA90PercentGranules"].(*float64), args["dichlor65Percent"].(*float64)), true
+
+	case "Query.estimateLastChlorine":
+		if e.complexity.Query.EstimateLastChlorine == nil {
+			break
+		}
+
+		args, err := ec.field_Query_estimateLastChlorine_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EstimateLastChlorine(childComplexity, args["poolID"].(common.ID)), true
 
 	case "Query.historyOfAdditives":
 		if e.complexity.Query.HistoryOfAdditives == nil {
@@ -538,6 +552,7 @@ type Query {
         TCCA90PercentGranules: Float,
         dichlor65Percent: Float,
     ): Float!
+    estimateLastChlorine(poolID: ID!): Float!
 }
 
 type Mutation {
@@ -1212,6 +1227,34 @@ func (ec *executionContext) field_Query_estimateChlorine_argsDichlor65Percent(
 	}
 
 	var zeroVal *float64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_estimateLastChlorine_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_estimateLastChlorine_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_estimateLastChlorine_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
 	return zeroVal, nil
 }
 
@@ -2660,6 +2703,61 @@ func (ec *executionContext) fieldContext_Query_estimateChlorine(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_estimateChlorine_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_estimateLastChlorine(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_estimateLastChlorine(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EstimateLastChlorine(rctx, fc.Args["poolID"].(common.ID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_estimateLastChlorine(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_estimateLastChlorine_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5290,6 +5388,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_estimateChlorine(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "estimateLastChlorine":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_estimateLastChlorine(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

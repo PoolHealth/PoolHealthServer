@@ -18,6 +18,7 @@ type poolRepo interface {
 	SetPool(ctx context.Context, id uuid.UUID, rec *common.PoolData) error
 	GetPool(ctx context.Context, id uuid.UUID) (*common.Pool, error)
 	HasPool(ctx context.Context, id uuid.UUID) (ok bool, err error)
+	UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error)
 	DeletePool(ctx context.Context, id uuid.UUID) error
 	ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 }
@@ -133,6 +134,31 @@ func (d *db) HasPool(ctx context.Context, id uuid.UUID) (ok bool, err error) {
 
 func (d *db) DeletePool(ctx context.Context, id uuid.UUID) error {
 	return d.db.Del(ctx, d.keyBuilder.Pool(id)).Err()
+}
+
+func (d *db) UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error) {
+	key := d.keyBuilder.UserPools(userID)
+	data, err := d.db.Get(ctx, key).Bytes()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	var poolKeys []string
+	if err = json.Unmarshal(data, &poolKeys); err != nil {
+		return false, err
+	}
+
+	poolKey := d.keyBuilder.Pool(id)
+	for _, key = range poolKeys {
+		if key == poolKey {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error) {
