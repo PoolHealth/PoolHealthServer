@@ -25,6 +25,7 @@ type repo interface {
 	UpdatePool(ctx context.Context, id uuid.UUID, rec *common.PoolData) error
 	DeletePool(ctx context.Context, id uuid.UUID) error
 	ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
+	UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error)
 }
 
 type manager struct {
@@ -65,8 +66,7 @@ func (m *manager) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (m *manager) Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+	return m.repo.UserHasPool(ctx, id, userID)
 }
 
 func (m *manager) List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error) {
