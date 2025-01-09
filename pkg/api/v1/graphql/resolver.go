@@ -63,7 +63,7 @@ func (r *Resolver) checkAccessToPool(ctx context.Context, poolID uuid.UUID) erro
 		return err
 	}
 
-	ok, err := r.poolData.Has(ctx, user.ID, poolID)
+	ok, err := r.poolData.Has(ctx, poolID, user.ID)
 	if err != nil {
 		return err
 	}
