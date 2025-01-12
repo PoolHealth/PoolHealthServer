@@ -17,11 +17,12 @@ const (
 )
 
 type additives interface {
-	CreateAdditive(ctx context.Context, rec *common.Additives) error
-	QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Additives, error)
+	CreateChemicals(ctx context.Context, rec *common.Chemicals) error
+	QueryChemicals(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error)
+	QueryChemicalsGroupedByDay(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error)
 }
 
-func (d *db) CreateAdditive(ctx context.Context, rec *common.Additives) error {
+func (d *db) CreateChemicals(ctx context.Context, rec *common.Chemicals) error {
 	p := influxdb2.NewPointWithMeasurement(additivesTable).
 		AddTag(poolIDKey, rec.PoolID.String()).
 		SetTime(rec.CreatedAt)
@@ -33,13 +34,25 @@ func (d *db) CreateAdditive(ctx context.Context, rec *common.Additives) error {
 	return d.writeAPI.WritePoint(ctx, p)
 }
 
-func (d *db) QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Additives, error) {
+func (d *db) QueryChemicals(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {
+	query := fmt.Sprintf(`from(bucket:"%s") 
+	|> range(start: -1y) 
+	|> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")`, d.bucket, additivesTable, poolID.String())
+
+	return d.queryChemicals(ctx, query, poolID, order)
+}
+
+func (d *db) QueryChemicalsGroupedByDay(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {
 	query := fmt.Sprintf(`from(bucket:"%s") 
 	|> range(start: -1y) 
 	|> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")
 	|> window(every: 1d)
 	|> sum()`, d.bucket, additivesTable, poolID.String())
 
+	return d.queryChemicals(ctx, query, poolID, order)
+}
+
+func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {
 	d.log.Info(query)
 	result, err := d.queryAPI.Query(ctx, query)
 	if err != nil {
@@ -68,9 +81,9 @@ func (d *db) QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.
 		slices.SortFunc(times, func(a, b time.Time) int { return b.Compare(a) })
 	}
 
-	res := make([]common.Additives, len(times))
+	res := make([]common.Chemicals, len(times))
 	for i, t := range times {
-		res[i] = common.Additives{
+		res[i] = common.Chemicals{
 			PoolID:    poolID,
 			CreatedAt: t,
 			Products:  data[t],

@@ -24,6 +24,7 @@ const (
 type measurement interface {
 	CreateMeasurement(ctx context.Context, rec common.Measurement) error
 	QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Measurement, error)
+	QueryLastMeasurement(ctx context.Context, poolID uuid.UUID) ([]common.Measurement, error)
 }
 
 func (d *db) CreateMeasurement(ctx context.Context, rec common.Measurement) error {
@@ -51,6 +52,20 @@ func (d *db) QueryMeasurement(ctx context.Context, poolID uuid.UUID, order commo
 |> range(start: -1y) 
 |> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")`, d.bucket, measurementTable, poolID.String())
 
+	return d.queryMeasurement(ctx, query, poolID, order)
+}
+
+func (d *db) QueryLastMeasurement(ctx context.Context, poolID uuid.UUID) ([]common.Measurement, error) {
+	query := fmt.Sprintf(`from(bucket:"%s")
+	|> range(start: -1y)
+	|> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")
+	|> window(every: 1d)
+	|> last()`, d.bucket, measurementTable, poolID.String())
+
+	return d.queryMeasurement(ctx, query, poolID, common.OrderDesc)
+}
+
+func (d *db) queryMeasurement(ctx context.Context, query string, poolID uuid.UUID, order common.Order) ([]common.Measurement, error) {
 	d.log.Info(query)
 	result, err := d.queryAPI.Query(ctx, query)
 	if err != nil {

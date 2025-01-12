@@ -13,6 +13,7 @@ import (
 type MeasurementHistory interface {
 	CreateMeasurement(ctx context.Context, r common.Measurement) (common.Measurement, error)
 	QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Measurement, error)
+	DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt time.Time) (bool, error)
 }
 
 type repo interface {
@@ -37,6 +38,11 @@ func (m *measurementHistory) CreateMeasurement(ctx context.Context, r common.Mea
 	}
 
 	return r, nil
+}
+
+func (m *measurementHistory) DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt time.Time) (bool, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewMeasurementHistory(repo repo, log log.Logger) MeasurementHistory {

@@ -14,14 +14,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/ecslogrus"
 
-	"github.com/PoolHealth/PoolHealthServer/internal/additiveshistory"
-	"github.com/PoolHealth/PoolHealthServer/internal/auth"
-	"github.com/PoolHealth/PoolHealthServer/internal/estimator"
-	"github.com/PoolHealth/PoolHealthServer/internal/measurementhistory"
-	"github.com/PoolHealth/PoolHealthServer/internal/poolmanager"
 	"github.com/PoolHealth/PoolHealthServer/internal/repo/influx"
 	repoRedis "github.com/PoolHealth/PoolHealthServer/internal/repo/redis"
-	"github.com/PoolHealth/PoolHealthServer/internal/server"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/actionsmanager"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/additiveshistory"
+	auth2 "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/estimator"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/measurementhistory"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/poolmanager"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/poolsettingsmanager"
+	"github.com/PoolHealth/PoolHealthServer/internal/transport/server"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
 )
@@ -82,8 +84,8 @@ func main() {
 
 	poolManager := poolmanager.NewManager(repo, logger.WithField(pkgKey, "poolmanager"))
 
-	authCfg := auth.Config()
-	authM := auth.NewAuth(authCfg, repo, logger.WithField(pkgKey, "auth"))
+	authCfg := auth2.Config()
+	authM := auth2.NewAuth(authCfg, repo, logger.WithField(pkgKey, "auth"))
 
 	if err := authM.Start(); err != nil {
 		panic(err)
@@ -99,8 +101,14 @@ func main() {
 
 	est := estimator.NewEstimator(repo, idb, logger.WithField(pkgKey, "estimator"))
 
+	actionsManager := actionsmanager.NewManager(repo, logger.WithField(pkgKey, "actions"))
+
+	poolSettingsManager := poolsettingsmanager.NewPoolSettingsManager(repo, logger.WithField(pkgKey, "poolsettingsmanager"))
+
 	resolvers := graphql.NewResolver(
-		logger.WithField(pkgKey, "graphql"), poolManager, mhistory, ahistory, est, authM,
+		logger.WithField(pkgKey, "graphql"),
+		poolManager, mhistory, ahistory, est, actionsManager, poolSettingsManager,
+		authM,
 	)
 
 	s := server.NewServer(

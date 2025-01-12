@@ -23,7 +23,9 @@ func (id *ID) UnmarshalGQL(v interface{}) error {
 		if err != nil {
 			return err
 		}
+
 		*id = ID(u)
+
 		return nil
 	default:
 		return fmt.Errorf("%T is not a string", v)

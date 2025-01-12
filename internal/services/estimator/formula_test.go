@@ -13,7 +13,7 @@ func TestCalculateChlorine(t *testing.T) {
 	type args struct {
 		volume          float64
 		lastMeasurement common.Measurement
-		lastAdditives   common.Additives
+		lastAdditives   common.Chemicals
 	}
 	tests := []struct {
 		name    string
@@ -28,7 +28,7 @@ func TestCalculateChlorine(t *testing.T) {
 				lastMeasurement: common.Measurement{
 					Chlorine: null.FloatFrom(4.76),
 				},
-				lastAdditives: common.Additives{
+				lastAdditives: common.Chemicals{
 					Products: map[common.ChemicalProduct]float64{
 						common.CalciumHypochlorite65Percent: 1,
 					},
@@ -43,7 +43,7 @@ func TestCalculateChlorine(t *testing.T) {
 				lastMeasurement: common.Measurement{
 					Chlorine: null.FloatFrom(2.8),
 				},
-				lastAdditives: common.Additives{
+				lastAdditives: common.Chemicals{
 					Products: map[common.ChemicalProduct]float64{
 						common.TCCA90PercentTablets: 2,
 					},

@@ -3,43 +3,41 @@ scalar Date
 type Query {
     me: User
     pools: [Pool!]!
-    historyOfMeasurement(poolID: ID!, order: Order!, offset: Int, limit: Int): [Measurement!]!
-    historyOfAdditives(poolID: ID!, order: Order!, offset: Int, limit: Int): [Additives!]!
-    estimateChlorine(
-        poolID: ID!,
-        calciumHypochlorite65Percent: Float,
-        sodiumHypochlorite12Percent: Float,
-        sodiumHypochlorite14Percent: Float,
-        TCCA90PercentTablets: Float,
-        multiActionTablets: Float,
-        TCCA90PercentGranules: Float,
-        dichlor65Percent: Float,
-    ): Float!
-    estimateLastChlorine(poolID: ID!): Float!
+    estimateMeasurement(
+        input: ChemicalInput!
+    ): Measurement!
+    demandMeasurement(poolID: ID!): Measurement!
+    historyOfMeasurement(poolID: ID!, order: Order!, offset: Int, limit: Int): [MeasurementRecord!]!
+    historyOfAdditives(poolID: ID!, order: Order!, offset: Int, limit: Int): [Chemicals!]!
+    historyOfActions(poolID: ID!, order: Order!, offset: Int, limit: Int): [Action!]!
+    recommendedChemicals(poolID: ID!): [ChemicalValue!]!
 }
 
 type Mutation {
     authApple(appleCode:String!, deviceID: ID!): Session!
     addPool(name: String!, volume: Float!): Pool!
-    addMeasurement(poolID: ID!, chlorine: Float!, ph: Float!, alkalinity: Float!): Measurement!
-    addAdditives(
-        poolID: ID!,
-        calciumHypochlorite65Percent: Float,
-        sodiumHypochlorite12Percent: Float,
-        sodiumHypochlorite14Percent: Float,
-        TCCA90PercentTablets: Float,
-        multiActionTablets: Float,
-        TCCA90PercentGranules: Float,
-        dichlor65Percent: Float,
-    ): Additives!
+    addMeasurement(poolID: ID!, chlorine: Float, ph: Float, alkalinity: Float): MeasurementRecord!
+    deleteMeasurement(poolID: ID!, createdAt: Date!): Boolean!
+    addChemicals(
+        input: ChemicalInput!
+    ): Chemicals!
+    deleteChemicals(
+        poolID: ID!
+        createdAt: Date!
+    ): Boolean!
+    logActions(poolID: ID!, action: [Action!]!): Date!
+    updatePoolSettings(
+        poolID: ID!
+        settings: PoolSettingsInput!
+    ): PoolSettings!
 }
 
 type Subscription {
-    "Subscription for tea addition."
+    "Subscription for pool addition."
     onCreatePool: Pool!
-    "Subscription for tea update."
+    "Subscription for pool update."
     onUpdatePool: Pool!
-    "Subscription for tea remove."
+    "Subscription for pool remove."
     onDeletePool: ID!
 }
 
@@ -47,6 +45,7 @@ type Pool {
     id: ID!
     name: String!
     volume: Float!
+    settings: PoolSettings
 }
 
 type Session {
@@ -59,25 +58,144 @@ type User {
     pools: [Pool!]!
 }
 
+type MeasurementRecord {
+    measurement: Measurement!
+    createdAt: Date!
+}
+
 type Measurement {
     chlorine: Float!
     ph: Float!
     alkalinity: Float!
-    createdAt: Date!
-}
-
-type Additives {
-    calciumHypochlorite65Percent: Float
-    sodiumHypochlorite12Percent: Float
-    sodiumHypochlorite14Percent: Float
-    TCCA90PercentTablets: Float
-    multiActionTablets: Float
-    TCCA90PercentGranules: Float
-    dichlor65Percent: Float
-    createdAt: Date!
 }
 
 enum Order {
     ASC
     DESC
+}
+
+type Chemicals {
+    value: [ChemicalValue!]!
+    createdAt: Date!
+}
+
+type ChlorineChemicalValue {
+    type: ChlorineChemical!
+    value: Float!
+}
+
+type AcidChemicalValue {
+    type: AcidChemical!
+    value: Float!
+}
+
+type AlkalinityChemicalValue {
+    type: AlkalinityChemical!
+    value: Float!
+}
+
+union ChemicalValue = ChlorineChemicalValue | AcidChemicalValue | AlkalinityChemicalValue
+
+enum ChlorineChemical{
+    CalciumHypochlorite65Percent
+    SodiumHypochlorite12Percent
+    SodiumHypochlorite14Percent
+    TCCA90PercentTablets
+    MultiActionTablets
+    TCCA90PercentGranules
+    Dichlor65Percent
+}
+
+enum AcidChemical {
+    HydrochloricAcid
+    SodiumBisulphate
+}
+
+enum AlkalinityChemical {
+    SodiumBicarbonate
+}
+
+input ChlorineChemicalValueInput {
+    type: ChlorineChemical!
+    value: Float!
+}
+
+input AcidChemicalValueInput {
+    type: AcidChemical!
+    value: Float!
+}
+
+input AlkalinityChemicalValueInput {
+    type: AlkalinityChemical!
+    value: Float!
+}
+
+input ChemicalInput {
+    poolID: ID!
+    chlorine: [ChlorineChemicalValueInput!]
+    acid: [AcidChemicalValueInput!]
+    alkalinity: [AlkalinityChemicalValueInput!]
+}
+
+enum Action {
+    Net
+    Brush
+    Vacuum
+    Backwash
+    ScumLine
+    PumpBasketClean
+    SkimmerBasketClean
+}
+
+input PoolSettingsInput {
+    type: PoolType!
+    usageType: UsageType!
+    locationType: LocationType!
+    poolShape: PoolShape!
+    coordinates: CoordinatesInput!
+}
+
+type PoolSettings {
+    type: PoolType!
+    usageType: UsageType!
+    locationType: LocationType!
+    shape: PoolShape!
+    coordinates: Coordinates!
+}
+
+enum PoolType {
+    Infinity
+    Overflow
+    Skimmer
+}
+
+enum UsageType {
+    Community
+    Private
+    Holiday
+}
+
+enum LocationType {
+    Indoor
+    Outdoor
+}
+
+enum PoolShape {
+    Rectangle
+    Circle
+    Oval
+    Kidney
+    L
+    T
+    FreeForm
+}
+
+type Coordinates {
+    latitude: Float!
+    longitude: Float!
+}
+
+input CoordinatesInput {
+    latitude: Float!
+    longitude: Float!
 }

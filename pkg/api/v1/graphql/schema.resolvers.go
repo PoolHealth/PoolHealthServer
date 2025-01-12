@@ -6,13 +6,14 @@ package graphql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	null "github.com/guregu/null/v5"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	rootCommon "github.com/PoolHealth/PoolHealthServer/common"
-	authPkg "github.com/PoolHealth/PoolHealthServer/internal/auth"
+	authPkg "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql/generated"
 	model "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/models"
@@ -48,69 +49,96 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 }
 
 // AddMeasurement is the resolver for the addMeasurement field.
-func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine float64, ph float64, alkalinity float64) (*model.Measurement, error) {
+func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) (*model.MeasurementRecord, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
 
 	res, err := r.measurementHistory.CreateMeasurement(ctx, rootCommon.Measurement{
 		PoolID:     uuid.UUID(poolID),
-		Chlorine:   null.FloatFrom(chlorine),
-		PH:         null.FloatFrom(ph),
-		Alkalinity: null.FloatFrom(alkalinity),
+		Chlorine:   null.FloatFromPtr(chlorine),
+		PH:         null.FloatFromPtr(ph),
+		Alkalinity: null.FloatFromPtr(alkalinity),
 	})
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.MeasurementFromCommon(res), nil
+	return model.MeasurementRecordFromCommon(res), nil
 }
 
-// AddAdditives is the resolver for the addAdditives field.
-func (r *mutationResolver) AddAdditives(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (*model.Additives, error) {
+// DeleteMeasurement is the resolver for the deleteMeasurement field.
+func (r *mutationResolver) DeleteMeasurement(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return false, err
+	}
+
+	return r.measurementHistory.DeleteMeasurement(ctx, uuid.UUID(poolID), createdAt)
+}
+
+// AddChemicals is the resolver for the addChemicals field.
+func (r *mutationResolver) AddChemicals(ctx context.Context, input model.ChemicalInput) (*model.Chemicals, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(input.PoolID)); err != nil {
 		return nil, err
 	}
 
-	ad := &rootCommon.Additives{
-		PoolID:   uuid.UUID(poolID),
-		Products: make(map[rootCommon.ChemicalProduct]float64),
-	}
-
-	if calciumHypochlorite65Percent != nil {
-		ad.Products[rootCommon.CalciumHypochlorite65Percent] = *calciumHypochlorite65Percent
-	}
-
-	if sodiumHypochlorite12Percent != nil {
-		ad.Products[rootCommon.SodiumHypochlorite12Percent] = *sodiumHypochlorite12Percent
-	}
-
-	if sodiumHypochlorite14Percent != nil {
-		ad.Products[rootCommon.SodiumHypochlorite14Percent] = *sodiumHypochlorite14Percent
-	}
-
-	if tCCA90PercentTablets != nil {
-		ad.Products[rootCommon.TCCA90PercentTablets] = *tCCA90PercentTablets
-	}
-
-	if multiActionTablets != nil {
-		ad.Products[rootCommon.MultiActionTablets] = *multiActionTablets
-	}
-
-	if tCCA90PercentGranules != nil {
-		ad.Products[rootCommon.TCCA90PercentGranules] = *tCCA90PercentGranules
-	}
-
-	if dichlor65Percent != nil {
-		ad.Products[rootCommon.Dichlor65Percent] = *dichlor65Percent
-	}
-
-	res, err := r.additivesHistory.CreateAdditives(ctx, ad)
+	res, err := r.additivesHistory.CreateChemicals(ctx, uuid.UUID(input.PoolID), input.ToCommonProducts())
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.AdditivesFromCommon(res), nil
+	return model.ChemicalsFromCommon(res), nil
+}
+
+// DeleteChemicals is the resolver for the deleteChemicals field.
+func (r *mutationResolver) DeleteChemicals(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return false, err
+	}
+
+	return r.additivesHistory.DeleteChemicals(ctx, uuid.UUID(poolID), createdAt)
+}
+
+// LogActions is the resolver for the logActions field.
+func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, action []model.Action) (*time.Time, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
+	act := make([]rootCommon.ActionType, len(action))
+	for i, a := range action {
+		act[i] = a.ToCommon()
+	}
+
+	return r.actions.LogActions(ctx, uuid.UUID(poolID), act)
+}
+
+// UpdatePoolSettings is the resolver for the updatePoolSettings field.
+func (r *mutationResolver) UpdatePoolSettings(ctx context.Context, poolID common.ID, settings model.PoolSettingsInput) (*model.PoolSettings, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
+	res, err := r.poolSettingsManager.SetSettings(ctx, uuid.UUID(poolID), settings.ToCommon())
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.PoolSettingsFromCommon(res)
+}
+
+// Settings is the resolver for the settings field.
+func (r *poolResolver) Settings(ctx context.Context, obj *model.Pool) (*model.PoolSettings, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(obj.ID)); err != nil {
+		return nil, err
+	}
+
+	settings, err := r.poolSettingsManager.GetSettings(ctx, uuid.UUID(obj.ID))
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.PoolSettingsFromCommon(settings)
 }
 
 // Me is the resolver for the me field.
@@ -141,8 +169,36 @@ func (r *queryResolver) Pools(ctx context.Context) ([]*model.Pool, error) {
 	return result, nil
 }
 
+// EstimateMeasurement is the resolver for the estimateMeasurement field.
+func (r *queryResolver) EstimateMeasurement(ctx context.Context, input model.ChemicalInput) (*model.Measurement, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(input.PoolID)); err != nil {
+		return nil, err
+	}
+
+	res, err := r.estimator.EstimateMeasurement(ctx, input.ToCommonProducts())
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.MeasurementFromCommon(res), nil
+}
+
+// DemandMeasurement is the resolver for the demandMeasurement field.
+func (r *queryResolver) DemandMeasurement(ctx context.Context, poolID common.ID) (*model.Measurement, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return nil, err
+	}
+
+	res, err := r.estimator.DemandMeasurement(ctx, uuid.UUID(poolID))
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.MeasurementFromCommon(res), nil
+}
+
 // HistoryOfMeasurement is the resolver for the historyOfMeasurement field.
-func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Measurement, error) {
+func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.MeasurementRecord, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -152,16 +208,16 @@ func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.Measurement, len(res))
+	result := make([]*model.MeasurementRecord, len(res))
 	for i, m := range res {
-		result[i] = model.MeasurementFromCommon(m)
+		result[i] = model.MeasurementRecordFromCommon(m)
 	}
 
 	return result, nil
 }
 
 // HistoryOfAdditives is the resolver for the historyOfAdditives field.
-func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Additives, error) {
+func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Chemicals, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -171,39 +227,48 @@ func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.Additives, len(res))
+	result := make([]*model.Chemicals, len(res))
 	for i, a := range res {
-		result[i] = model.AdditivesFromCommon(&a)
+		result[i] = model.ChemicalsFromCommon(&a)
 	}
 
 	return result, nil
 }
 
-// EstimateChlorine is the resolver for the estimateChlorine field.
-func (r *queryResolver) EstimateChlorine(ctx context.Context, poolID common.ID, calciumHypochlorite65Percent *float64, sodiumHypochlorite12Percent *float64, sodiumHypochlorite14Percent *float64, tCCA90PercentTablets *float64, multiActionTablets *float64, tCCA90PercentGranules *float64, dichlor65Percent *float64) (float64, error) {
+// HistoryOfActions is the resolver for the historyOfActions field.
+func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]model.Action, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return r.estimator.EstimateChlorine(
-		ctx, uuid.UUID(poolID),
-		null.FloatFromPtr(calciumHypochlorite65Percent),
-		null.FloatFromPtr(sodiumHypochlorite12Percent),
-		null.FloatFromPtr(sodiumHypochlorite14Percent),
-		null.FloatFromPtr(tCCA90PercentTablets),
-		null.FloatFromPtr(multiActionTablets),
-		null.FloatFromPtr(tCCA90PercentGranules),
-		null.FloatFromPtr(dichlor65Percent),
-	)
+	res, err := r.actions.QueryActions(ctx, uuid.UUID(poolID), order.ToCommon(), offset, limit)
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	result := make([]model.Action, len(res))
+	for i, a := range res {
+		result[i], err = model.ActionFromCommon(a)
+		if err != nil {
+			return nil, castGQLError(ctx, err)
+		}
+	}
+
+	return result, nil
 }
 
-// EstimateLastChlorine is the resolver for the estimateLastChlorine field.
-func (r *queryResolver) EstimateLastChlorine(ctx context.Context, poolID common.ID) (float64, error) {
+// RecommendedChemicals is the resolver for the recommendedChemicals field.
+func (r *queryResolver) RecommendedChemicals(ctx context.Context, poolID common.ID) ([]model.ChemicalValue, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return r.estimator.EstimateLastChlorine(ctx, uuid.UUID(poolID))
+	res, err := r.estimator.RecommendedChemicals(ctx, uuid.UUID(poolID))
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return model.ChemicalValuesFromCommonProduct(res), nil
 }
 
 // OnCreatePool is the resolver for the onCreatePool field.
@@ -294,6 +359,9 @@ func (r *userResolver) Pools(ctx context.Context, obj *model.User) ([]*model.Poo
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
+// Pool returns generated.PoolResolver implementation.
+func (r *Resolver) Pool() generated.PoolResolver { return &poolResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
@@ -304,6 +372,7 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
 type mutationResolver struct{ *Resolver }
+type poolResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }

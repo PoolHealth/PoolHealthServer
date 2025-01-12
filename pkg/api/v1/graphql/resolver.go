@@ -2,13 +2,13 @@ package graphql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/guregu/null/v5"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/PoolHealth/PoolHealthServer/common"
-	authPkg "github.com/PoolHealth/PoolHealthServer/internal/auth"
+	authPkg "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
 )
 
 //go:generate go run ../scripts/gqlgen.go
@@ -31,16 +31,29 @@ type poolData interface {
 type measurementHistory interface {
 	CreateMeasurement(ctx context.Context, r common.Measurement) (common.Measurement, error)
 	QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Measurement, error)
+	DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt time.Time) (bool, error)
 }
 
 type additivesHistory interface {
-	CreateAdditives(ctx context.Context, r *common.Additives) (*common.Additives, error)
-	QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Additives, error)
+	CreateChemicals(ctx context.Context, poolID uuid.UUID, r map[common.ChemicalProduct]float64) (*common.Chemicals, error)
+	QueryAdditives(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Chemicals, error)
+	DeleteChemicals(ctx context.Context, poolID uuid.UUID, createdAt time.Time) (bool, error)
 }
 
 type estimator interface {
-	EstimateChlorine(ctx context.Context, poolID uuid.UUID, calciumHypochlorite65Percent, sodiumHypochlorite12Percent, sodiumHypochlorite14Percent, tCCA90PercentTablets, multiActionTablets, tCCA90PercentGranules, dichlor65Percent null.Float) (float64, error)
-	EstimateLastChlorine(ctx context.Context, poolID uuid.UUID) (float64, error)
+	RecommendedChemicals(ctx context.Context, poolID uuid.UUID) (map[common.ChemicalProduct]float64, error)
+	DemandMeasurement(ctx context.Context, poolID uuid.UUID) (common.Measurement, error)
+	EstimateMeasurement(ctx context.Context, chemicals map[common.ChemicalProduct]float64) (common.Measurement, error)
+}
+
+type actions interface {
+	LogActions(ctx context.Context, poolID uuid.UUID, actions []common.ActionType) (*time.Time, error)
+	QueryActions(ctx context.Context, poolID uuid.UUID, order common.Order, offset *int, limit *int) ([]common.ActionType, error)
+}
+
+type poolSettingsManager interface {
+	SetSettings(ctx context.Context, poolID uuid.UUID, settings *common.PoolSettings) (*common.PoolSettings, error)
+	GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error)
 }
 
 type auth interface {
@@ -53,6 +66,8 @@ type Resolver struct {
 	additivesHistory
 	auth
 	estimator estimator
+	actions
+	poolSettingsManager
 
 	log logger
 }
@@ -81,14 +96,18 @@ func NewResolver(
 	measurementHistory measurementHistory,
 	additivesHistory additivesHistory,
 	estimator estimator,
+	actions actions,
+	poolSettingsManager poolSettingsManager,
 	auth auth,
 ) *Resolver {
 	return &Resolver{
-		auth:               auth,
-		poolData:           data,
-		measurementHistory: measurementHistory,
-		additivesHistory:   additivesHistory,
-		estimator:          estimator,
-		log:                logger,
+		auth:                auth,
+		poolData:            data,
+		measurementHistory:  measurementHistory,
+		additivesHistory:    additivesHistory,
+		estimator:           estimator,
+		actions:             actions,
+		poolSettingsManager: poolSettingsManager,
+		log:                 logger,
 	}
 }

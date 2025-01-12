@@ -14,7 +14,7 @@ output:
   # Output styling.
   # e.g. colored-line-number, line-number, json, tab, checkstyle, code-climate.
   # Default is colored-line-number.
-  format: colored-line-number
+  formats: colored-line-number
   # Print lines of code with issue, default is true.
   print-issued-lines: true
   # Print linter name in the end of issue text, default is true.
@@ -49,12 +49,11 @@ linters:
     - errchkjson
     # The errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
     - errorlint
-    # execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.
-    - execinquery
     # Check exhaustiveness of enum switch statements.
     - exhaustive
+    - mnd
     # Checks for pointers to enclosing loop variables.
-    - exportloopref
+    - copyloopvar
     # Finds forced type assertions.
     - forcetypeassert
     # Tool for detection of long functions.
@@ -80,11 +79,11 @@ linters:
     # Tool for detection of FIX.ME, TO.DO and other comment keywords.
     # - godox
     # Go linter to check the errors handling expressions.
-    - goerr113
+    - err113
     # Check import statements are formatted according to the 'goimport' command. Reformat imports in autofix mode.
     - goimports
     # An analyzer to detect magic numbers.
-    - gomnd
+    - mnd
     # Checks that printf-like functions are named with f at the end.
     - goprintffuncname
     # Inspects source code for security problems.
@@ -367,39 +366,6 @@ linters-settings:
     # Minimal code complexity to report, 30 by default but recommend 10-20.
     min-complexity: 20
 
-  gomnd:
-    # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
-    # Default: ["argument", "case", "condition", "operation", "return", "assign"]
-    checks:
-      - argument
-      - case
-      # - condition
-      - operation
-      - return
-      - assign
-    # List of numbers to exclude from analysis.
-    # The numbers should be written as string.
-    # Values always ignored: "1", "1.0", "0" and "0.0"
-    # Default: []
-    # ignored-numbers:
-    #   - '0666'
-    #   - '0755'
-    #   - '42'
-    # List of file patterns to exclude from analysis.
-    # Values always ignored: `.+_test.go`
-    # Default: []
-    # ignored-files:
-    #   - 'magic1_.+\.go$'
-    # List of function patterns to exclude from analysis.
-    # Following functions are always ignored: `time.Date`,
-    # `strconv.FormatInt`, `strconv.FormatUint`, `strconv.FormatFloat`,
-    # `strconv.ParseInt`, `strconv.ParseUint`, `strconv.ParseFloat`.
-    # Default: []
-    # ignored-functions:
-    #   - '^math\.'
-    #   - '^http\.StatusText$'
-
-    # Detects Go structs that would take less memory if their fields were sorted.
   maligned:
     # Print struct with more effective memory layout, false by default.
     suggest-new: true
@@ -454,17 +420,17 @@ linters-settings:
     allow-cuddle-declarations: false
     # A list of call idents that everything can be cuddled with.
     # Defaults to calls looking like locks.
-    allow-cuddle-with-calls: ["Lock", "RLock"]
+    allow-cuddle-with-calls: [ "Lock", "RLock" ]
     # AllowCuddleWithRHS is a list of right hand side variables that is allowed
     # to be cuddled with anything. Defaults to assignments or calls looking
     # like unlocks.
-    allow-cuddle-with-rhs: ["Unlock", "RUnlock"]
+    allow-cuddle-with-rhs: [ "Unlock", "RUnlock" ]
     # Causes an error when an If statement that checks an error variable doesn't
     # cuddle with the assignment of that variable.
     force-err-cuddling: false
     # When force-err-cuddling is enabled this is a list of names
     # used for error variables to check for in the conditional.
-    error-variable-names: ["err"]
+    error-variable-names: [ "err" ]
     # Causes an error if a short declaration (:=) cuddles with anything other than
     # another short declaration.
     # This logic overrides force-err-cuddling among others.
