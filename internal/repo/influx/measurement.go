@@ -67,6 +67,7 @@ func (d *db) QueryLastMeasurement(ctx context.Context, poolID uuid.UUID) ([]comm
 
 func (d *db) queryMeasurement(ctx context.Context, query string, poolID uuid.UUID, order common.Order) ([]common.Measurement, error) {
 	d.log.Info(query)
+
 	result, err := d.queryAPI.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -94,11 +95,14 @@ func (d *db) queryMeasurement(ctx context.Context, query string, poolID uuid.UUI
 		el, ok := data[record.Time()]
 		if !ok {
 			times = append(times, record.Time())
+
 			data[record.Time()] = map[string]null.Float{record.Field(): null.FloatFrom(record.Value().(float64))}
+
 			continue
 		}
 
 		el[record.Field()] = null.FloatFrom(record.Value().(float64))
+
 		data[record.Time()] = el
 	}
 

@@ -67,8 +67,12 @@ func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID,
 		record := result.Record()
 		t := record.Start()
 
+		if record.ValueByKey("_time") != nil {
+			t = record.Time()
+		}
+
 		if _, ok := data[t]; !ok {
-			times = append(times, record.Start())
+			times = append(times, t)
 			data[t] = map[common.ChemicalProduct]float64{}
 		}
 
