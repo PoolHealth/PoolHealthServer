@@ -54,6 +54,7 @@ func (d *db) QueryChemicalsGroupedByDay(ctx context.Context, poolID uuid.UUID, o
 
 func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {
 	d.log.Info(query)
+
 	result, err := d.queryAPI.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -61,9 +62,11 @@ func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID,
 
 	data := map[time.Time]map[common.ChemicalProduct]float64{}
 	times := make([]time.Time, 0)
+
 	for result.Next() {
 		record := result.Record()
 		t := record.Start()
+
 		if _, ok := data[t]; !ok {
 			times = append(times, record.Start())
 			data[t] = map[common.ChemicalProduct]float64{}

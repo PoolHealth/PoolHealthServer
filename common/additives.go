@@ -46,6 +46,9 @@ var ChemicalProductNames = map[ChemicalProduct]string{
 	MultiActionTablets:           "Multi-Action Tablets",
 	TCCA90PercentGranules:        "TCCA 90% Granules",
 	Dichlor65Percent:             "Dichlor 65%",
+	HydrochloricAcid:             "Hydrochloric Acid",
+	SodiumBisulphate:             "Sodium Bisulphate",
+	SodiumBicarbonate:            "Sodium Bicarbonate",
 }
 
 var ChemicalProductTypes = map[ChemicalProduct]TypeOfChemicals{
@@ -81,4 +84,7 @@ var ChemicalProductNamesToChemicalProduct = map[string]ChemicalProduct{
 	"Multi-Action Tablets":     MultiActionTablets,
 	"TCCA 90% Granules":        TCCA90PercentGranules,
 	"Dichlor 65%":              Dichlor65Percent,
+	"Hydrochloric Acid":        HydrochloricAcid,
+	"Sodium Bisulphate":        SodiumBisulphate,
+	"Sodium Bicarbonate":       SodiumBicarbonate,
 }
