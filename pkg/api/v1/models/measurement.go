@@ -12,9 +12,19 @@ func MeasurementRecordFromCommon(res common.Measurement) *MeasurementRecord {
 }
 
 func MeasurementFromCommon(res common.Measurement) *Measurement {
-	return &Measurement{
-		Chlorine:   res.Chlorine.Float64,
-		Ph:         res.PH.Float64,
-		Alkalinity: res.Alkalinity.Float64,
+	m := &Measurement{}
+
+	if res.Chlorine.Valid {
+		m.Chlorine = &res.Chlorine.Float64
 	}
+
+	if res.PH.Valid {
+		m.Ph = &res.PH.Float64
+	}
+
+	if res.Alkalinity.Valid {
+		m.Alkalinity = &res.Alkalinity.Float64
+	}
+
+	return m
 }

@@ -74,9 +74,9 @@ type CoordinatesInput struct {
 }
 
 type Measurement struct {
-	Chlorine   float64 `json:"chlorine"`
-	Ph         float64 `json:"ph"`
-	Alkalinity float64 `json:"alkalinity"`
+	Chlorine   *float64 `json:"chlorine,omitempty"`
+	Ph         *float64 `json:"ph,omitempty"`
+	Alkalinity *float64 `json:"alkalinity,omitempty"`
 }
 
 type MeasurementRecord struct {

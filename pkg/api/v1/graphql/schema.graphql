@@ -64,9 +64,9 @@ type MeasurementRecord {
 }
 
 type Measurement {
-    chlorine: Float!
-    ph: Float!
-    alkalinity: Float!
+    chlorine: Float
+    ph: Float
+    alkalinity: Float
 }
 
 enum Order {

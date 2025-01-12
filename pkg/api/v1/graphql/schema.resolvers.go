@@ -8,15 +8,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
-	null "github.com/guregu/null/v5"
-	"github.com/vektah/gqlparser/v2/gqlerror"
-
 	rootCommon "github.com/PoolHealth/PoolHealthServer/common"
 	authPkg "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql/generated"
 	model "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/models"
+	"github.com/google/uuid"
+	null "github.com/guregu/null/v5"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // AuthApple is the resolver for the authApple field.

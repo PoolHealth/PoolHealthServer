@@ -786,9 +786,9 @@ type MeasurementRecord {
 }
 
 type Measurement {
-    chlorine: Float!
-    ph: Float!
-    alkalinity: Float!
+    chlorine: Float
+    ph: Float
+    alkalinity: Float
 }
 
 enum Order {
@@ -2287,14 +2287,11 @@ func (ec *executionContext) _Measurement_chlorine(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(*float64)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Measurement_chlorine(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2331,14 +2328,11 @@ func (ec *executionContext) _Measurement_ph(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(*float64)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Measurement_ph(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2375,14 +2369,11 @@ func (ec *executionContext) _Measurement_alkalinity(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(*float64)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Measurement_alkalinity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6636,19 +6627,10 @@ func (ec *executionContext) _Measurement(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = graphql.MarshalString("Measurement")
 		case "chlorine":
 			out.Values[i] = ec._Measurement_chlorine(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "ph":
 			out.Values[i] = ec._Measurement_ph(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "alkalinity":
 			out.Values[i] = ec._Measurement_alkalinity(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
