@@ -37,7 +37,9 @@ func (d *db) CreateChemicals(ctx context.Context, rec *common.Chemicals) error {
 func (d *db) QueryChemicals(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {
 	query := fmt.Sprintf(`from(bucket:"%s") 
 	|> range(start: -1y) 
-	|> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")`, d.bucket, additivesTable, poolID.String())
+	|> filter(fn: (r) => r._measurement == "%s" and r.poolID == "%s")
+	|> window(every: 1m)
+	|> sum()`, d.bucket, additivesTable, poolID.String())
 
 	return d.queryChemicals(ctx, query, poolID, order)
 }
