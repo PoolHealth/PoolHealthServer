@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	gql "github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
+	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/PoolHealth/PoolHealthServer/common"
@@ -43,7 +45,11 @@ type additivesHistory interface {
 type estimator interface {
 	RecommendedChemicals(ctx context.Context, poolID uuid.UUID) (map[common.ChemicalProduct]float64, error)
 	DemandMeasurement(ctx context.Context, poolID uuid.UUID) (common.Measurement, error)
-	EstimateMeasurement(ctx context.Context, chemicals map[common.ChemicalProduct]float64) (common.Measurement, error)
+	EstimateMeasurement(
+		ctx context.Context, poolID uuid.UUID,
+		chemicals map[common.ChemicalProduct]float64,
+		selection []common.MeasurementType,
+	) (common.Measurement, error)
 }
 
 type actions interface {
@@ -88,6 +94,39 @@ func (r *Resolver) checkAccessToPool(ctx context.Context, poolID uuid.UUID) erro
 	}
 
 	return nil
+}
+
+func (r *Resolver) getMeasurements(ctx context.Context) []common.MeasurementType {
+	measurementsMap := map[common.MeasurementType]struct{}{}
+
+	fieldSelections := gql.GetFieldContext(ctx).Field.Selections
+
+	for _, sel := range fieldSelections {
+		switch sel := sel.(type) {
+		case *ast.Field:
+			measurementsMap[mapToMeasurementType(sel.Name)] = struct{}{}
+		}
+	}
+
+	measurements := make([]common.MeasurementType, 0, len(measurementsMap))
+	for m := range measurementsMap {
+		measurements = append(measurements, m)
+	}
+
+	return measurements
+}
+
+func mapToMeasurementType(s string) common.MeasurementType {
+	switch s {
+	case "chlorine":
+		return common.MeasurementChlorine
+	case "ph":
+		return common.MeasurementPH
+	case "alkalinity":
+		return common.MeasurementAlkalinity
+	default:
+		return common.MeasurementChlorine
+	}
 }
 
 func NewResolver(

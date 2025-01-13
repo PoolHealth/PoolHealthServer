@@ -27,6 +27,21 @@ type Estimator struct {
 	log log.Logger
 }
 
+type LastMeasurement struct {
+	Chlorine         float64
+	PreviousChlorine float64
+	PH               float64
+	Alkalinity       float64
+}
+
+func (l LastMeasurement) Empty() bool {
+	return l.Chlorine == 0 && l.PH == 0 && l.Alkalinity == 0 && l.PreviousChlorine == 0
+}
+
+func (l LastMeasurement) Filled() bool {
+	return l.Chlorine != 0 && l.PH != 0 && l.Alkalinity != 0 && l.PreviousChlorine != 0
+}
+
 func (e *Estimator) RecommendedChemicals(ctx context.Context, poolID uuid.UUID) (map[common.ChemicalProduct]float64, error) {
 	//TODO implement me
 	panic("implement me")
@@ -39,12 +54,12 @@ func (e *Estimator) DemandMeasurement(ctx context.Context, poolID uuid.UUID) (co
 		return common.Measurement{}, err
 	}
 
-	lastMeasurement, err := e.historyRepo.QueryMeasurement(ctx, poolID, common.OrderDesc)
+	lastMeasurements, err := e.getLastMeasurements(ctx, poolID)
 	if err != nil {
 		return common.Measurement{}, err
 	}
 
-	if len(lastMeasurement) == 0 {
+	if lastMeasurements.Empty() {
 		return common.Measurement{}, nil
 	}
 
@@ -53,40 +68,19 @@ func (e *Estimator) DemandMeasurement(ctx context.Context, poolID uuid.UUID) (co
 		return common.Measurement{}, err
 	}
 
-	var lastChlorine, lastPH, lastAlkalinity, previousChlorine float64
-
-	for _, m := range lastMeasurement {
-		if m.Chlorine.Valid {
-			if lastChlorine != 0 {
-				previousChlorine = m.Chlorine.Float64
-			} else {
-				lastChlorine = m.Chlorine.Float64
-			}
-
-		}
-
-		if m.PH.Valid {
-			lastPH = m.PH.Float64
-		}
-
-		if m.Alkalinity.Valid {
-			lastAlkalinity = m.Alkalinity.Float64
-		}
-	}
-
-	chlorine := lastChlorine
-	ph := lastPH
-	alkalinity := lastAlkalinity
+	chlorine := lastMeasurements.Chlorine
+	ph := lastMeasurements.PH
+	alkalinity := lastMeasurements.Alkalinity
 
 	if len(lastAdditives) != 0 {
-		chlorine = CalculateChlorine(pool.Volume, lastChlorine, lastAdditives[0].Products)
+		chlorine = CalculateChlorine(pool.Volume, lastMeasurements.Chlorine, lastAdditives[0].Products)
 
-		ph = CalculatePH(pool.Volume, lastPH, lastAdditives[0].Products)
+		ph = CalculatePH(pool.Volume, lastMeasurements.PH, lastAdditives[0].Products)
 
-		alkalinity = CalculateAlkalinity(pool.Volume, lastAlkalinity, lastAdditives[0].Products)
+		alkalinity = CalculateAlkalinity(pool.Volume, lastMeasurements.Alkalinity, lastAdditives[0].Products)
 	}
 
-	chlorine -= previousChlorine
+	chlorine -= lastMeasurements.PreviousChlorine
 
 	result := common.Measurement{
 		PoolID:     poolID,
@@ -98,9 +92,40 @@ func (e *Estimator) DemandMeasurement(ctx context.Context, poolID uuid.UUID) (co
 	return result, nil
 }
 
-func (e *Estimator) EstimateMeasurement(ctx context.Context, chemicals map[common.ChemicalProduct]float64) (common.Measurement, error) {
-	//TODO implement me
-	panic("implement me")
+func (e *Estimator) EstimateMeasurement(
+	ctx context.Context,
+	poolID uuid.UUID,
+	chemicals map[common.ChemicalProduct]float64,
+	selector []common.MeasurementType,
+) (common.Measurement, error) {
+	pool, err := e.GetPool(ctx, poolID)
+	if err != nil {
+		return common.Measurement{}, err
+	}
+
+	lastMeasurement, err := e.getLastMeasurements(ctx, poolID)
+	if err != nil {
+		return common.Measurement{}, err
+	}
+
+	if lastMeasurement.Empty() {
+		return common.Measurement{}, nil
+	}
+
+	result := common.Measurement{}
+
+	for _, s := range selector {
+		switch s {
+		case common.MeasurementChlorine:
+			result.Chlorine = null.FloatFrom(CalculateChlorine(pool.Volume, lastMeasurement.Chlorine, chemicals))
+		case common.MeasurementPH:
+			result.PH = null.FloatFrom(CalculatePH(pool.Volume, lastMeasurement.PH, chemicals))
+		case common.MeasurementAlkalinity:
+			result.Alkalinity = null.FloatFrom(CalculateAlkalinity(pool.Volume, lastMeasurement.Alkalinity, chemicals))
+		}
+	}
+
+	return result, nil
 }
 
 func (e *Estimator) EstimateChlorine(ctx context.Context, poolID uuid.UUID, calciumHypochlorite65Percent, sodiumHypochlorite12Percent, sodiumHypochlorite14Percent, tCCA90PercentTablets, multiActionTablets, tCCA90PercentGranules, dichlor65Percent null.Float) (float64, error) {
@@ -149,6 +174,44 @@ func (e *Estimator) EstimateChlorine(ctx context.Context, poolID uuid.UUID, calc
 	}
 
 	return CalculateChlorine(pool.Volume, lastMeasurement[0].Chlorine.Float64, additives), nil
+}
+
+func (e *Estimator) getLastMeasurements(ctx context.Context, poolID uuid.UUID) (LastMeasurement, error) {
+	lastMeasurement, err := e.historyRepo.QueryMeasurement(ctx, poolID, common.OrderDesc)
+	if err != nil {
+		return LastMeasurement{}, err
+	}
+
+	if len(lastMeasurement) == 0 {
+		return LastMeasurement{}, nil
+	}
+
+	result := LastMeasurement{}
+
+	for _, m := range lastMeasurement {
+		if m.Chlorine.Valid {
+			if result.Chlorine != 0 {
+				result.PreviousChlorine = m.Chlorine.Float64
+			} else {
+				result.Chlorine = m.Chlorine.Float64
+			}
+
+		}
+
+		if m.PH.Valid {
+			result.PH = m.PH.Float64
+		}
+
+		if m.Alkalinity.Valid {
+			result.Alkalinity = m.Alkalinity.Float64
+		}
+
+		if result.Filled() {
+			return result, nil
+		}
+	}
+
+	return result, nil
 }
 
 func NewEstimator(repo repo, historyRepo historyRepo, logger log.Logger) *Estimator {

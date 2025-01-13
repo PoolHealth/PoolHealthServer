@@ -14,3 +14,17 @@ type Measurement struct {
 	Alkalinity null.Float
 	CreatedAt  time.Time
 }
+
+type MeasurementType uint
+
+var AllMeasurementType = []MeasurementType{
+	MeasurementChlorine,
+	MeasurementPH,
+	MeasurementAlkalinity,
+}
+
+const (
+	MeasurementChlorine MeasurementType = iota
+	MeasurementPH
+	MeasurementAlkalinity
+)

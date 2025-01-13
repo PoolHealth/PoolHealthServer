@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vektah/gqlparser/v2/ast"
 
-	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql/generated"
+	generated "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
 )
 

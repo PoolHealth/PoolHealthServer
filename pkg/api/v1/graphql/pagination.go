@@ -1,4 +1,4 @@
-package model
+package graphql
 
 import "github.com/PoolHealth/PoolHealthServer/common"
 

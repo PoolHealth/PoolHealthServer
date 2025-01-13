@@ -8,30 +8,29 @@ import (
 	"context"
 	"time"
 
-	rootCommon "github.com/PoolHealth/PoolHealthServer/common"
-	authPkg "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
-	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
-	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql/generated"
-	model "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/models"
 	"github.com/google/uuid"
 	null "github.com/guregu/null/v5"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+
+	rootCommon "github.com/PoolHealth/PoolHealthServer/common"
+	authPkg "github.com/PoolHealth/PoolHealthServer/internal/services/auth"
+	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
 )
 
 // AuthApple is the resolver for the authApple field.
-func (r *mutationResolver) AuthApple(ctx context.Context, appleCode string, deviceID common.ID) (*model.Session, error) {
+func (r *mutationResolver) AuthApple(ctx context.Context, appleCode string, deviceID common.ID) (*Session, error) {
 	session, err := r.auth.Auth(ctx, appleCode)
 	if err != nil {
 		return nil, gqlerror.Wrap(err)
 	}
-	return &model.Session{
+	return &Session{
 		Token:     session.JWT,
 		ExpiredAt: session.ExpiredAt,
 	}, nil
 }
 
 // AddPool is the resolver for the addPool field.
-func (r *mutationResolver) AddPool(ctx context.Context, name string, volume float64) (*model.Pool, error) {
+func (r *mutationResolver) AddPool(ctx context.Context, name string, volume float64) (*Pool, error) {
 	user, err := authPkg.GetUser(ctx)
 	if err != nil {
 		return nil, err
@@ -44,11 +43,11 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.PoolFromCommon(pool), nil
+	return PoolFromCommon(pool), nil
 }
 
 // AddMeasurement is the resolver for the addMeasurement field.
-func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) (*model.MeasurementRecord, error) {
+func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) (*MeasurementRecord, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -63,7 +62,7 @@ func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID,
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.MeasurementRecordFromCommon(res), nil
+	return MeasurementRecordFromCommon(res), nil
 }
 
 // DeleteMeasurement is the resolver for the deleteMeasurement field.
@@ -76,7 +75,7 @@ func (r *mutationResolver) DeleteMeasurement(ctx context.Context, poolID common.
 }
 
 // AddChemicals is the resolver for the addChemicals field.
-func (r *mutationResolver) AddChemicals(ctx context.Context, input model.ChemicalInput) (*model.Chemicals, error) {
+func (r *mutationResolver) AddChemicals(ctx context.Context, input ChemicalInput) (*Chemicals, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(input.PoolID)); err != nil {
 		return nil, err
 	}
@@ -86,7 +85,7 @@ func (r *mutationResolver) AddChemicals(ctx context.Context, input model.Chemica
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.ChemicalsFromCommon(res), nil
+	return ChemicalsFromCommon(res), nil
 }
 
 // DeleteChemicals is the resolver for the deleteChemicals field.
@@ -99,7 +98,7 @@ func (r *mutationResolver) DeleteChemicals(ctx context.Context, poolID common.ID
 }
 
 // LogActions is the resolver for the logActions field.
-func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, action []model.Action) (*time.Time, error) {
+func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, action []Action) (*time.Time, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, act
 }
 
 // UpdatePoolSettings is the resolver for the updatePoolSettings field.
-func (r *mutationResolver) UpdatePoolSettings(ctx context.Context, poolID common.ID, settings model.PoolSettingsInput) (*model.PoolSettings, error) {
+func (r *mutationResolver) UpdatePoolSettings(ctx context.Context, poolID common.ID, settings PoolSettingsInput) (*PoolSettings, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -123,34 +122,30 @@ func (r *mutationResolver) UpdatePoolSettings(ctx context.Context, poolID common
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.PoolSettingsFromCommon(res)
+	return PoolSettingsFromCommon(res)
 }
 
 // Settings is the resolver for the settings field.
-func (r *poolResolver) Settings(ctx context.Context, obj *model.Pool) (*model.PoolSettings, error) {
-	if err := r.checkAccessToPool(ctx, uuid.UUID(obj.ID)); err != nil {
-		return nil, err
-	}
-
+func (r *poolResolver) Settings(ctx context.Context, obj *Pool) (*PoolSettings, error) {
 	settings, err := r.poolSettingsManager.GetSettings(ctx, uuid.UUID(obj.ID))
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.PoolSettingsFromCommon(settings)
+	return PoolSettingsFromCommon(settings)
 }
 
 // Me is the resolver for the me field.
-func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+func (r *queryResolver) Me(ctx context.Context) (*User, error) {
 	user, err := authPkg.GetUser(ctx)
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
-	return &model.User{TokenExpiredAt: user.Session.ExpiredAt}, nil
+	return &User{TokenExpiredAt: user.Session.ExpiredAt, id: user.ID}, nil
 }
 
 // Pools is the resolver for the pools field.
-func (r *queryResolver) Pools(ctx context.Context) ([]*model.Pool, error) {
+func (r *queryResolver) Pools(ctx context.Context) ([]*Pool, error) {
 	user, err := authPkg.GetUser(ctx)
 	if err != nil {
 		return nil, err
@@ -160,30 +155,31 @@ func (r *queryResolver) Pools(ctx context.Context) ([]*model.Pool, error) {
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.Pool, len(pools))
+	result := make([]*Pool, len(pools))
 	for i, pool := range pools {
-		result[i] = model.PoolFromCommon(&pool)
+		result[i] = PoolFromCommon(&pool)
 	}
 
 	return result, nil
 }
 
 // EstimateMeasurement is the resolver for the estimateMeasurement field.
-func (r *queryResolver) EstimateMeasurement(ctx context.Context, input model.ChemicalInput) (*model.Measurement, error) {
+func (r *queryResolver) EstimateMeasurement(ctx context.Context, input ChemicalInput) (*Measurement, error) {
+	poolID := uuid.UUID(input.PoolID)
 	if err := r.checkAccessToPool(ctx, uuid.UUID(input.PoolID)); err != nil {
 		return nil, err
 	}
 
-	res, err := r.estimator.EstimateMeasurement(ctx, input.ToCommonProducts())
+	res, err := r.estimator.EstimateMeasurement(ctx, poolID, input.ToCommonProducts(), r.getMeasurements(ctx))
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.MeasurementFromCommon(res), nil
+	return MeasurementFromCommon(res), nil
 }
 
 // DemandMeasurement is the resolver for the demandMeasurement field.
-func (r *queryResolver) DemandMeasurement(ctx context.Context, poolID common.ID) (*model.Measurement, error) {
+func (r *queryResolver) DemandMeasurement(ctx context.Context, poolID common.ID) (*Measurement, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -193,11 +189,11 @@ func (r *queryResolver) DemandMeasurement(ctx context.Context, poolID common.ID)
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.MeasurementFromCommon(res), nil
+	return MeasurementFromCommon(res), nil
 }
 
 // HistoryOfMeasurement is the resolver for the historyOfMeasurement field.
-func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.MeasurementRecord, error) {
+func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*MeasurementRecord, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -207,16 +203,16 @@ func (r *queryResolver) HistoryOfMeasurement(ctx context.Context, poolID common.
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.MeasurementRecord, len(res))
+	result := make([]*MeasurementRecord, len(res))
 	for i, m := range res {
-		result[i] = model.MeasurementRecordFromCommon(m)
+		result[i] = MeasurementRecordFromCommon(m)
 	}
 
 	return result, nil
 }
 
 // HistoryOfAdditives is the resolver for the historyOfAdditives field.
-func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]*model.Chemicals, error) {
+func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Chemicals, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -226,16 +222,16 @@ func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.Chemicals, len(res))
+	result := make([]*Chemicals, len(res))
 	for i, a := range res {
-		result[i] = model.ChemicalsFromCommon(&a)
+		result[i] = ChemicalsFromCommon(&a)
 	}
 
 	return result, nil
 }
 
 // HistoryOfActions is the resolver for the historyOfActions field.
-func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, order model.Order, offset *int, limit *int) ([]model.Action, error) {
+func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]Action, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -245,9 +241,9 @@ func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, 
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]model.Action, len(res))
+	result := make([]Action, len(res))
 	for i, a := range res {
-		result[i], err = model.ActionFromCommon(a)
+		result[i], err = ActionFromCommon(a)
 		if err != nil {
 			return nil, castGQLError(ctx, err)
 		}
@@ -257,7 +253,7 @@ func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, 
 }
 
 // RecommendedChemicals is the resolver for the recommendedChemicals field.
-func (r *queryResolver) RecommendedChemicals(ctx context.Context, poolID common.ID) ([]model.ChemicalValue, error) {
+func (r *queryResolver) RecommendedChemicals(ctx context.Context, poolID common.ID) ([]ChemicalValue, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -267,12 +263,12 @@ func (r *queryResolver) RecommendedChemicals(ctx context.Context, poolID common.
 		return nil, castGQLError(ctx, err)
 	}
 
-	return model.ChemicalValuesFromCommonProduct(res), nil
+	return ChemicalValuesFromCommonProduct(res), nil
 }
 
 // OnCreatePool is the resolver for the onCreatePool field.
-func (r *subscriptionResolver) OnCreatePool(ctx context.Context) (<-chan *model.Pool, error) {
-	ch := make(chan *model.Pool)
+func (r *subscriptionResolver) OnCreatePool(ctx context.Context) (<-chan *Pool, error) {
+	ch := make(chan *Pool)
 	res, err := r.SubscribeOnCreate(ctx)
 	if err != nil {
 		return nil, err
@@ -284,7 +280,7 @@ func (r *subscriptionResolver) OnCreatePool(ctx context.Context) (<-chan *model.
 			case <-ctx.Done():
 				close(ch)
 			case pool := <-res:
-				ch <- model.PoolFromCommon(pool)
+				ch <- PoolFromCommon(pool)
 			}
 		}
 	}()
@@ -293,8 +289,8 @@ func (r *subscriptionResolver) OnCreatePool(ctx context.Context) (<-chan *model.
 }
 
 // OnUpdatePool is the resolver for the onUpdatePool field.
-func (r *subscriptionResolver) OnUpdatePool(ctx context.Context) (<-chan *model.Pool, error) {
-	ch := make(chan *model.Pool)
+func (r *subscriptionResolver) OnUpdatePool(ctx context.Context) (<-chan *Pool, error) {
+	ch := make(chan *Pool)
 	res, err := r.SubscribeOnUpdate(ctx)
 	if err != nil {
 		return nil, err
@@ -306,7 +302,7 @@ func (r *subscriptionResolver) OnUpdatePool(ctx context.Context) (<-chan *model.
 			case <-ctx.Done():
 				close(ch)
 			case pool := <-res:
-				ch <- model.PoolFromCommon(pool)
+				ch <- PoolFromCommon(pool)
 			}
 		}
 	}()
@@ -337,38 +333,34 @@ func (r *subscriptionResolver) OnDeletePool(ctx context.Context) (<-chan common.
 }
 
 // Pools is the resolver for the pools field.
-func (r *userResolver) Pools(ctx context.Context, obj *model.User) ([]*model.Pool, error) {
-	user, err := authPkg.GetUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	pools, err := r.poolData.List(ctx, user.ID)
+func (r *userResolver) Pools(ctx context.Context, obj *User) ([]*Pool, error) {
+	pools, err := r.poolData.List(ctx, obj.id)
 	if err != nil {
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]*model.Pool, len(pools))
+	result := make([]*Pool, len(pools))
 	for i, pool := range pools {
-		result[i] = model.PoolFromCommon(&pool)
+		result[i] = PoolFromCommon(&pool)
 	}
 
 	return result, nil
 }
 
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
-// Pool returns generated.PoolResolver implementation.
-func (r *Resolver) Pool() generated.PoolResolver { return &poolResolver{r} }
+// Pool returns PoolResolver implementation.
+func (r *Resolver) Pool() PoolResolver { return &poolResolver{r} }
 
-// Query returns generated.QueryResolver implementation.
-func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
+// Query returns QueryResolver implementation.
+func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-// Subscription returns generated.SubscriptionResolver implementation.
-func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
-// User returns generated.UserResolver implementation.
-func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type poolResolver struct{ *Resolver }

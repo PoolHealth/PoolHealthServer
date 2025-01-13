@@ -4,8 +4,8 @@ schema:
 
 # Where should the generated server code go?
 exec:
-  filename: graphql/generated/generated.go
-  package: generated
+  filename: graphql/generated.go
+  package: graphql
 
 # Uncomment to enable federation
 # federation:
@@ -14,8 +14,8 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: models/models_gen.go
-  package: model
+  filename: graphql/models_gen.go
+  package: graphql
 
 # Where should the resolver implementations go?
 resolver:
@@ -35,7 +35,7 @@ resolver:
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/models"
+  - "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -51,6 +51,9 @@ models:
     fields:
       pools:
         resolver: true
+    extraFields:
+      id:
+        type: "github.com/google/uuid.UUID"
   ID:
     model:
       - github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common.ID
