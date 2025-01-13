@@ -1,8 +1,6 @@
 package estimator
 
 import (
-	"errors"
-
 	"github.com/PoolHealth/PoolHealthServer/common"
 )
 
@@ -10,12 +8,9 @@ import (
 // lastChlorine + sum(el * coefficient) / volume
 func CalculateChlorine(
 	volume float64,
-	lastMeasurement common.Measurement,
+	lastMeasurement float64,
 	additives map[common.ChemicalProduct]float64,
-) (float64, error) {
-	if !lastMeasurement.Chlorine.Valid {
-		return 0.0, errors.New("last chlorine measurement required")
-	}
+) float64 {
 
 	sum := 0.0
 
@@ -27,18 +22,14 @@ func CalculateChlorine(
 		sum += v * common.ChemicalProductCoefficients[k]
 	}
 
-	return lastMeasurement.Chlorine.Float64 + sum/volume, nil
+	return lastMeasurement + sum/volume
 }
 
 func CalculateAlkalinity(
 	volume float64,
-	lastMeasurement common.Measurement,
+	lastMeasurement float64,
 	additives map[common.ChemicalProduct]float64,
-) (float64, error) {
-	if !lastMeasurement.Alkalinity.Valid {
-		return 0.0, errors.New("last alkalinity measurement required")
-	}
-
+) float64 {
 	value := 0.0
 	if v, ok := additives[common.SodiumBicarbonate]; ok {
 		value = v * common.ChemicalProductCoefficients[common.SodiumBicarbonate]
@@ -52,16 +43,12 @@ func CalculateAlkalinity(
 		value -= v * 1000 / 0.0012
 	}
 
-	return lastMeasurement.Alkalinity.Float64 + value/volume, nil
+	return lastMeasurement + value/volume
 }
 
 func CalculatePH(volume float64,
-	lastMeasurement common.Measurement,
-	additives map[common.ChemicalProduct]float64) (float64, error) {
-	if !lastMeasurement.PH.Valid {
-		return 0.0, errors.New("last PH measurement required")
-	}
-
+	lastMeasurement float64,
+	additives map[common.ChemicalProduct]float64) float64 {
 	//=E8-(((1000*Q8)/($A$2*0,02))+((1000*R8)/($A$2*0,05)))
 	value := 0.0
 
@@ -73,5 +60,5 @@ func CalculatePH(volume float64,
 		value += v * 1000 / 0.02
 	}
 
-	return lastMeasurement.PH.Float64 - value/volume, nil
+	return lastMeasurement - value/volume
 }

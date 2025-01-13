@@ -53,23 +53,40 @@ func (e *Estimator) DemandMeasurement(ctx context.Context, poolID uuid.UUID) (co
 		return common.Measurement{}, err
 	}
 
-	chlorine := lastMeasurement[0].Chlorine.Float64
-	if len(lastMeasurement) > 1 {
-		chlorine -= lastMeasurement[1].Chlorine.Float64
+	var lastChlorine, lastPH, lastAlkalinity, previousChlorine float64
+
+	for _, m := range lastMeasurement {
+		if m.Chlorine.Valid {
+			if lastChlorine != 0 {
+				previousChlorine = m.Chlorine.Float64
+			} else {
+				lastChlorine = m.Chlorine.Float64
+			}
+
+		}
+
+		if m.PH.Valid {
+			lastPH = m.PH.Float64
+		}
+
+		if m.Alkalinity.Valid {
+			lastAlkalinity = m.Alkalinity.Float64
+		}
 	}
-	ph := lastMeasurement[0].Chlorine.Float64
-	alkalinity := lastMeasurement[0].Alkalinity.Float64
+
+	chlorine := lastChlorine
+	ph := lastPH
+	alkalinity := lastAlkalinity
 
 	if len(lastAdditives) != 0 {
-		chlorine, err = CalculateChlorine(pool.Volume, lastMeasurement[0], lastAdditives[0].Products)
-		if err != nil {
-			return common.Measurement{}, err
-		}
+		chlorine = CalculateChlorine(pool.Volume, lastChlorine, lastAdditives[0].Products)
 
-		if len(lastMeasurement) > 1 {
-			chlorine -= lastMeasurement[1].Chlorine.Float64
-		}
+		ph = CalculatePH(pool.Volume, lastPH, lastAdditives[0].Products)
+
+		alkalinity = CalculateAlkalinity(pool.Volume, lastAlkalinity, lastAdditives[0].Products)
 	}
+
+	chlorine -= previousChlorine
 
 	result := common.Measurement{
 		PoolID:     poolID,
@@ -131,7 +148,7 @@ func (e *Estimator) EstimateChlorine(ctx context.Context, poolID uuid.UUID, calc
 		additives[common.Dichlor65Percent] = dichlor65Percent.Float64
 	}
 
-	return CalculateChlorine(pool.Volume, lastMeasurement[0], additives)
+	return CalculateChlorine(pool.Volume, lastMeasurement[0].Chlorine.Float64, additives), nil
 }
 
 func NewEstimator(repo repo, historyRepo historyRepo, logger log.Logger) *Estimator {
