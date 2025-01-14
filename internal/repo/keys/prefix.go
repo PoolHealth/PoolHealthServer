@@ -9,6 +9,7 @@ var (
 	userPrefix         Prefix = [2]byte{0x00, 0x02}
 	devicePrefix       Prefix = [2]byte{0x00, 0x03}
 	notificationPrefix Prefix = [2]byte{0x00, 0x04}
+	poolSettingsPrefix Prefix = [2]byte{0x00, 0x05}
 
 	// Prefixes for keys of indexes
 	userIndexAppleID       Prefix = [2]byte{0x01, 0x00}

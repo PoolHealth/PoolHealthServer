@@ -17,6 +17,7 @@ type DB interface {
 	version
 	poolRepo
 	userRepo
+	poolSettings
 }
 
 type db struct {

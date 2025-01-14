@@ -18,9 +18,14 @@ type Builder interface {
 	DevicesByUserID(id uuid.UUID) string
 	Notification(id uuid.UUID) string
 	NotificationByUserID(id uuid.UUID) string
+	PoolSettings(poolID uuid.UUID) string
 }
 
 type builder struct {
+}
+
+func (b builder) PoolSettings(poolID uuid.UUID) string {
+	return appendUUID(poolSettingsPrefix, poolID)
 }
 
 func (b builder) UserPools(userID uuid.UUID) string {

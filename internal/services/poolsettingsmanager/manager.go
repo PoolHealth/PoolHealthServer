@@ -16,6 +16,8 @@ type Manager struct {
 }
 
 type repo interface {
+	SetSettings(ctx context.Context, poolID uuid.UUID, settings *common.PoolSettings) error
+	GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error)
 }
 
 func NewPoolSettingsManager(repo repo, logger log.Logger) *Manager {
@@ -23,11 +25,9 @@ func NewPoolSettingsManager(repo repo, logger log.Logger) *Manager {
 }
 
 func (m *Manager) SetSettings(ctx context.Context, poolID uuid.UUID, settings *common.PoolSettings) (*common.PoolSettings, error) {
-	//TODO implement me
-	panic("implement me")
+	return settings, m.repo.SetSettings(ctx, poolID, settings)
 }
 
 func (m *Manager) GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error) {
-	//TODO implement me
-	panic("implement me")
+	return m.repo.GetSettings(ctx, poolID)
 }
