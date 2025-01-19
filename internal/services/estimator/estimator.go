@@ -2,6 +2,8 @@ package estimator
 
 import (
 	"context"
+	"errors"
+	"math"
 
 	"github.com/google/uuid"
 	"github.com/guregu/null/v5"
@@ -12,6 +14,7 @@ import (
 
 type repo interface {
 	GetPool(ctx context.Context, id uuid.UUID) (*common.Pool, error)
+	GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error)
 }
 
 type historyRepo interface {
@@ -43,8 +46,42 @@ func (l LastMeasurement) Filled() bool {
 }
 
 func (e *Estimator) RecommendedChemicals(ctx context.Context, poolID uuid.UUID) (map[common.ChemicalProduct]float64, error) {
-	//TODO implement me
-	panic("implement me")
+	pool, err := e.GetPool(ctx, poolID)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, err := e.GetSettings(ctx, poolID)
+	if err != nil {
+		return nil, err
+	}
+
+	if settings == nil {
+		return nil, errors.New("can't recommend chemicals without settings")
+	}
+
+	if settings.UsageType == common.UsageTypeUnknown {
+		return nil, errors.New("can't recommend chemicals without usage type")
+	}
+
+	highTarget := chlorineHighByUsage[settings.UsageType]
+
+	lastMeasurements, err := e.getLastMeasurements(ctx, poolID)
+	if err != nil {
+		return nil, err
+	}
+
+	if lastMeasurements.Empty() {
+		return nil, nil
+	}
+
+	data := recommendChlorineByTarget(pool.Volume, lastMeasurements.Chlorine, highTarget)
+
+	for k, v := range data {
+		data[k] = math.Trunc(v*100) / 100
+	}
+
+	return data, nil
 }
 
 // TODO separate calculation

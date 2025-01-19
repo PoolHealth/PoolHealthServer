@@ -64,18 +64,6 @@ var ChemicalProductTypes = map[ChemicalProduct]TypeOfChemicals{
 	SodiumBicarbonate:            Alkalinity,
 }
 
-var ChemicalProductCoefficients = map[ChemicalProduct]float64{
-	CalciumHypochlorite65Percent: 1000 / 0.00175,
-	SodiumHypochlorite12Percent:  1000 / 0.00825,
-	SodiumHypochlorite14Percent:  1000 / 0.00715,
-	TCCA90PercentTablets:         200 / 0.0011,
-	MultiActionTablets:           200 / 0.0011,
-	TCCA90PercentGranules:        1000 / 0.0011,
-	Dichlor65Percent:             1000 / 0.0011,
-
-	SodiumBicarbonate: 1000 / 0.001675,
-}
-
 var ChemicalProductNamesToChemicalProduct = map[string]ChemicalProduct{
 	"Calcium Hypochlorite 65%": CalciumHypochlorite65Percent,
 	"Sodium Hypochlorite 12%":  SodiumHypochlorite12Percent,
