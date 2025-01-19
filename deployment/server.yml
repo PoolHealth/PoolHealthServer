@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/poolhealth/poolhealthserver:v0.2.7
+          image: ghcr.io/poolhealth/poolhealthserver:v0.2.8
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

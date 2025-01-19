@@ -25,6 +25,7 @@ type measurement interface {
 	CreateMeasurement(ctx context.Context, rec common.Measurement) error
 	QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Measurement, error)
 	QueryLastMeasurement(ctx context.Context, poolID uuid.UUID) ([]common.Measurement, error)
+	DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt time.Time) error
 }
 
 func (d *db) CreateMeasurement(ctx context.Context, rec common.Measurement) error {
@@ -140,4 +141,15 @@ func (d *db) queryMeasurement(ctx context.Context, query string, poolID uuid.UUI
 	}
 
 	return res, nil
+}
+
+func (d *db) DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt time.Time) error {
+	return d.deleteAPI.DeleteWithName(
+		ctx,
+		d.org,
+		d.bucket,
+		createdAt,
+		createdAt,
+		fmt.Sprintf(`_measurement="%s" and poolID="%s"`, measurementTable, poolID.String()),
+	)
 }
