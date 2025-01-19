@@ -149,7 +149,7 @@ func (d *db) DeleteMeasurement(ctx context.Context, poolID uuid.UUID, createdAt 
 		d.org,
 		d.bucket,
 		createdAt,
-		createdAt,
+		createdAt.Add(time.Minute),
 		fmt.Sprintf(`_measurement="%s" and poolID="%s"`, measurementTable, poolID.String()),
 	)
 }
