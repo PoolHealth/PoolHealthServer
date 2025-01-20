@@ -1,0 +1,12 @@
+schema: ../api/v1/graphql/schema.graphql
+documents: '**/*.graphql'
+extensions:
+  endpoints:
+    Local:
+      url: http://localhost:8080/v1/query
+      headers:
+        Authorization: ${TOKEN}
+    Production:
+      url: https://poolhealth.net/v1/query
+
+

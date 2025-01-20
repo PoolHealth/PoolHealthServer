@@ -28,6 +28,11 @@ type AcidChemicalValueInput struct {
 	Value float64      `json:"value"`
 }
 
+type Action struct {
+	Types     []ActionType `json:"types"`
+	CreatedAt time.Time    `json:"createdAt"`
+}
+
 type AlkalinityChemicalValue struct {
 	Type  AlkalinityChemical `json:"type"`
 	Value float64            `json:"value"`
@@ -169,54 +174,54 @@ func (e AcidChemical) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type Action string
+type ActionType string
 
 const (
-	ActionNet                Action = "Net"
-	ActionBrush              Action = "Brush"
-	ActionVacuum             Action = "Vacuum"
-	ActionBackwash           Action = "Backwash"
-	ActionScumLine           Action = "ScumLine"
-	ActionPumpBasketClean    Action = "PumpBasketClean"
-	ActionSkimmerBasketClean Action = "SkimmerBasketClean"
+	ActionTypeNet                ActionType = "Net"
+	ActionTypeBrush              ActionType = "Brush"
+	ActionTypeVacuum             ActionType = "Vacuum"
+	ActionTypeBackwash           ActionType = "Backwash"
+	ActionTypeScumLine           ActionType = "ScumLine"
+	ActionTypePumpBasketClean    ActionType = "PumpBasketClean"
+	ActionTypeSkimmerBasketClean ActionType = "SkimmerBasketClean"
 )
 
-var AllAction = []Action{
-	ActionNet,
-	ActionBrush,
-	ActionVacuum,
-	ActionBackwash,
-	ActionScumLine,
-	ActionPumpBasketClean,
-	ActionSkimmerBasketClean,
+var AllActionType = []ActionType{
+	ActionTypeNet,
+	ActionTypeBrush,
+	ActionTypeVacuum,
+	ActionTypeBackwash,
+	ActionTypeScumLine,
+	ActionTypePumpBasketClean,
+	ActionTypeSkimmerBasketClean,
 }
 
-func (e Action) IsValid() bool {
+func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionNet, ActionBrush, ActionVacuum, ActionBackwash, ActionScumLine, ActionPumpBasketClean, ActionSkimmerBasketClean:
+	case ActionTypeNet, ActionTypeBrush, ActionTypeVacuum, ActionTypeBackwash, ActionTypeScumLine, ActionTypePumpBasketClean, ActionTypeSkimmerBasketClean:
 		return true
 	}
 	return false
 }
 
-func (e Action) String() string {
+func (e ActionType) String() string {
 	return string(e)
 }
 
-func (e *Action) UnmarshalGQL(v any) error {
+func (e *ActionType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = Action(str)
+	*e = ActionType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Action", str)
+		return fmt.Errorf("%s is not a valid ActionType", str)
 	}
 	return nil
 }
 
-func (e Action) MarshalGQL(w io.Writer) {
+func (e ActionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -6,29 +6,29 @@ import (
 
 // Logger abstruct interface for internal logging
 type Logger interface {
-	Error(msgs ...interface{})
-	Warn(msgs ...interface{})
-	Info(msgs ...interface{})
-	Debug(msgs ...interface{})
-	Trace(msgs ...interface{})
-	Tracef(s string, msgs ...interface{})
+	Error(msgs ...any)
+	Warn(msgs ...any)
+	Info(msgs ...any)
+	Debug(msgs ...any)
+	Trace(msgs ...any)
+	Tracef(s string, msgs ...any)
 	WithError(err error) Logger
-	WithField(key string, value interface{}) Logger
+	WithField(key string, value any) Logger
 }
 
 type logger struct {
 	log *logrus.Entry
 }
 
-func (l *logger) Warn(msgs ...interface{}) {
+func (l *logger) Warn(msgs ...any) {
 	l.log.Warn(msgs...)
 }
 
-func (l *logger) Tracef(s string, msgs ...interface{}) {
+func (l *logger) Tracef(s string, msgs ...any) {
 	l.log.Tracef(s, msgs...)
 }
 
-func (l *logger) WithField(key string, value interface{}) Logger {
+func (l *logger) WithField(key string, value any) Logger {
 	return NewLoggerFromEntry(l.log.WithField(key, value))
 }
 
@@ -36,19 +36,19 @@ func (l *logger) WithError(err error) Logger {
 	return NewLoggerFromEntry(l.log.WithError(err))
 }
 
-func (l *logger) Error(msgs ...interface{}) {
+func (l *logger) Error(msgs ...any) {
 	l.log.Error(msgs...)
 }
 
-func (l *logger) Info(msgs ...interface{}) {
+func (l *logger) Info(msgs ...any) {
 	l.log.Info(msgs...)
 }
 
-func (l *logger) Debug(msgs ...interface{}) {
+func (l *logger) Debug(msgs ...any) {
 	l.log.Debug(msgs...)
 }
 
-func (l *logger) Trace(msgs ...interface{}) {
+func (l *logger) Trace(msgs ...any) {
 	l.log.Trace(msgs...)
 }
 

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 
@@ -101,7 +103,7 @@ func main() {
 
 	est := estimator.NewEstimator(repo, idb, logger.WithField(pkgKey, "estimator"))
 
-	actionsManager := actionsmanager.NewManager(repo, logger.WithField(pkgKey, "actions"))
+	actionsManager := actionsmanager.NewManager(idb, logger.WithField(pkgKey, "actions"))
 
 	poolSettingsManager := poolsettingsmanager.NewPoolSettingsManager(repo, logger.WithField(pkgKey, "poolsettingsmanager"))
 
@@ -121,6 +123,10 @@ func main() {
 	s.InitV1Api()
 
 	if err := s.Run(ctx); err != nil {
-		panic(err)
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.Info("server closed")
+		} else {
+			panic(err)
+		}
 	}
 }

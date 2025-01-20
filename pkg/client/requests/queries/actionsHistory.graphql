@@ -1,0 +1,6 @@
+query actionsHistory($poolID: ID!) {
+    historyOfActions(poolID: $poolID, order: DESC) {
+        types
+        createdAt
+    }
+}

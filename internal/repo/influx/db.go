@@ -10,6 +10,7 @@ import (
 type DB interface {
 	measurement
 	additives
+	action
 }
 
 type db struct {

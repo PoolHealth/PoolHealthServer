@@ -80,7 +80,10 @@ func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID,
 
 		product, ok := common.ChemicalProductNamesToChemicalProduct[record.Field()]
 		if ok {
-			data[t][product] = record.Value().(float64)
+			data[t][product], ok = record.Value().(float64)
+			if !ok {
+				d.log.WithField("value", record.Value()).Warn("failed to convert value to float64")
+			}
 		}
 	}
 
@@ -100,4 +103,15 @@ func (d *db) queryChemicals(ctx context.Context, query string, poolID uuid.UUID,
 	}
 
 	return res, nil
+}
+
+func (d *db) DeleteChemicals(ctx context.Context, poolID uuid.UUID, createdAt time.Time) error {
+	return d.deleteAPI.DeleteWithName(
+		ctx,
+		d.org,
+		d.bucket,
+		createdAt,
+		createdAt.Add(time.Minute),
+		fmt.Sprintf(`_measurement="%s" and poolID="%s"`, additivesTable, poolID.String()),
+	)
 }

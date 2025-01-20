@@ -28,7 +28,7 @@ type measurementHistory struct {
 	log log.Logger
 }
 
-func (m *measurementHistory) QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order, offset, limit *int) ([]common.Measurement, error) {
+func (m *measurementHistory) QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order, _, _ *int) ([]common.Measurement, error) {
 	return m.repo.QueryMeasurement(ctx, poolID, order)
 }
 

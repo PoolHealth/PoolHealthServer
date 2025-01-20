@@ -25,7 +25,8 @@ type Mutation {
         poolID: ID!
         createdAt: Date!
     ): Boolean!
-    logActions(poolID: ID!, action: [Action!]!): Date!
+    logActions(poolID: ID!, action: [ActionType!]!): Date!
+    deleteActionsLog(poolID: ID!, createdAt: Date!): Boolean!
     updatePoolSettings(
         poolID: ID!
         settings: PoolSettingsInput!
@@ -137,7 +138,12 @@ input ChemicalInput {
     alkalinity: [AlkalinityChemicalValueInput!]
 }
 
-enum Action {
+type Action {
+    types: [ActionType!]!
+    createdAt: Date!
+}
+
+enum ActionType {
     Net
     Brush
     Vacuum

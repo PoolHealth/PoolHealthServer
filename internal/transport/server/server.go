@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -38,13 +39,15 @@ func (s *Server) Run(ctx context.Context) error {
 
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 
-	s.log.Info("server start on port 8080")
+	s.log.Info("start on port 8080")
 
 	server := &http.Server{Addr: ":8080", Handler: handlers.CORS(originsOk)(s.router)}
 
 	go func() {
 		<-ctx.Done()
-		if err := server.Shutdown(context.Background()); err != nil {
+		newCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := server.Shutdown(newCtx); err != nil {
 			s.log.Error(err)
 		}
 	}()
@@ -54,7 +57,16 @@ func (s *Server) Run(ctx context.Context) error {
 	}))
 	s.router.Handle("/metrics", promhttp.Handler())
 
-	return server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			s.log.Info("closed")
+
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) InitV1Api() {

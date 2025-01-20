@@ -53,8 +53,9 @@ type estimator interface {
 }
 
 type actions interface {
-	LogActions(ctx context.Context, poolID uuid.UUID, actions []common.ActionType) (*time.Time, error)
-	QueryActions(ctx context.Context, poolID uuid.UUID, order common.Order, offset *int, limit *int) ([]common.ActionType, error)
+	LogActions(ctx context.Context, poolID uuid.UUID, actions []common.ActionType) (time.Time, error)
+	QueryActions(ctx context.Context, poolID uuid.UUID, order common.Order, offset *int, limit *int) ([]common.Action, error)
+	DeleteAction(ctx context.Context, poolID uuid.UUID, createdAt time.Time) (bool, error)
 }
 
 type poolSettingsManager interface {

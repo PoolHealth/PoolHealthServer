@@ -6,44 +6,62 @@ import (
 	"github.com/PoolHealth/PoolHealthServer/common"
 )
 
-func (a Action) ToCommon() common.ActionType {
+func (a ActionType) ToCommon() common.ActionType {
 	switch a {
-	case ActionNet:
+	case ActionTypeNet:
 		return common.ActionNet
-	case ActionBrush:
+	case ActionTypeBrush:
 		return common.ActionBrush
-	case ActionVacuum:
+	case ActionTypeVacuum:
 		return common.ActionVacuum
-	case ActionBackwash:
+	case ActionTypeBackwash:
 		return common.ActionBackwash
-	case ActionScumLine:
+	case ActionTypeScumLine:
 		return common.ActionScumLine
-	case ActionPumpBasketClean:
+	case ActionTypePumpBasketClean:
 		return common.ActionPumpBasketClean
-	case ActionSkimmerBasketClean:
+	case ActionTypeSkimmerBasketClean:
 		return common.ActionSkimmerBasketClean
 	default:
 		return common.ActionTypeUnknown
 	}
 }
 
-func ActionFromCommon(a common.ActionType) (Action, error) {
+func ActionTypeFromCommon(a common.ActionType) (ActionType, error) {
 	switch a {
 	case common.ActionNet:
-		return ActionNet, nil
+		return ActionTypeNet, nil
 	case common.ActionBrush:
-		return ActionBrush, nil
+		return ActionTypeBrush, nil
 	case common.ActionVacuum:
-		return ActionVacuum, nil
+		return ActionTypeVacuum, nil
 	case common.ActionBackwash:
-		return ActionBackwash, nil
+		return ActionTypeBackwash, nil
 	case common.ActionScumLine:
-		return ActionScumLine, nil
+		return ActionTypeScumLine, nil
 	case common.ActionPumpBasketClean:
-		return ActionPumpBasketClean, nil
+		return ActionTypePumpBasketClean, nil
 	case common.ActionSkimmerBasketClean:
-		return ActionSkimmerBasketClean, nil
+		return ActionTypeSkimmerBasketClean, nil
 	default:
 		return "", errors.New("unknown action type")
 	}
+}
+
+func ActionFromCommon(a common.Action) (*Action, error) {
+	action := &Action{
+		Types:     make([]ActionType, len(a.Types)),
+		CreatedAt: a.CreatedAt,
+	}
+
+	for i, k := range a.Types {
+		actionType, err := ActionTypeFromCommon(k)
+		if err != nil {
+			return nil, err
+		}
+
+		action.Types[i] = actionType
+	}
+
+	return action, nil
 }

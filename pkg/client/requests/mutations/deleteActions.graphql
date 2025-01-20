@@ -1,0 +1,3 @@
+mutation deleteActions($poolID: ID!, $createdAt: Date!){
+    deleteActionsLog(poolID: $poolID, createdAt: $createdAt)
+}

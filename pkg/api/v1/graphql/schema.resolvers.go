@@ -98,7 +98,7 @@ func (r *mutationResolver) DeleteChemicals(ctx context.Context, poolID common.ID
 }
 
 // LogActions is the resolver for the logActions field.
-func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, action []Action) (*time.Time, error) {
+func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, action []ActionType) (*time.Time, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -108,7 +108,21 @@ func (r *mutationResolver) LogActions(ctx context.Context, poolID common.ID, act
 		act[i] = a.ToCommon()
 	}
 
-	return r.actions.LogActions(ctx, uuid.UUID(poolID), act)
+	createdAt, err := r.actions.LogActions(ctx, uuid.UUID(poolID), act)
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return &createdAt, nil
+}
+
+// DeleteActionsLog is the resolver for the deleteActionsLog field.
+func (r *mutationResolver) DeleteActionsLog(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error) {
+	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
+		return false, err
+	}
+
+	return r.actions.DeleteAction(ctx, uuid.UUID(poolID), createdAt)
 }
 
 // UpdatePoolSettings is the resolver for the updatePoolSettings field.
@@ -231,7 +245,7 @@ func (r *queryResolver) HistoryOfAdditives(ctx context.Context, poolID common.ID
 }
 
 // HistoryOfActions is the resolver for the historyOfActions field.
-func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]Action, error) {
+func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Action, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {
 		return nil, err
 	}
@@ -241,7 +255,7 @@ func (r *queryResolver) HistoryOfActions(ctx context.Context, poolID common.ID, 
 		return nil, castGQLError(ctx, err)
 	}
 
-	result := make([]Action, len(res))
+	result := make([]*Action, len(res))
 	for i, a := range res {
 		result[i], err = ActionFromCommon(a)
 		if err != nil {

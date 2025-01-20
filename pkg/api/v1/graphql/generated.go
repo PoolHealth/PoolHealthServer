@@ -57,6 +57,11 @@ type ComplexityRoot struct {
 		Value func(childComplexity int) int
 	}
 
+	Action struct {
+		CreatedAt func(childComplexity int) int
+		Types     func(childComplexity int) int
+	}
+
 	AlkalinityChemicalValue struct {
 		Type  func(childComplexity int) int
 		Value func(childComplexity int) int
@@ -93,9 +98,10 @@ type ComplexityRoot struct {
 		AddMeasurement     func(childComplexity int, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) int
 		AddPool            func(childComplexity int, name string, volume float64) int
 		AuthApple          func(childComplexity int, appleCode string, deviceID common.ID) int
+		DeleteActionsLog   func(childComplexity int, poolID common.ID, createdAt time.Time) int
 		DeleteChemicals    func(childComplexity int, poolID common.ID, createdAt time.Time) int
 		DeleteMeasurement  func(childComplexity int, poolID common.ID, createdAt time.Time) int
-		LogActions         func(childComplexity int, poolID common.ID, action []Action) int
+		LogActions         func(childComplexity int, poolID common.ID, action []ActionType) int
 		UpdatePoolSettings func(childComplexity int, poolID common.ID, settings PoolSettingsInput) int
 	}
 
@@ -149,7 +155,8 @@ type MutationResolver interface {
 	DeleteMeasurement(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error)
 	AddChemicals(ctx context.Context, input ChemicalInput) (*Chemicals, error)
 	DeleteChemicals(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error)
-	LogActions(ctx context.Context, poolID common.ID, action []Action) (*time.Time, error)
+	LogActions(ctx context.Context, poolID common.ID, action []ActionType) (*time.Time, error)
+	DeleteActionsLog(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error)
 	UpdatePoolSettings(ctx context.Context, poolID common.ID, settings PoolSettingsInput) (*PoolSettings, error)
 }
 type PoolResolver interface {
@@ -162,7 +169,7 @@ type QueryResolver interface {
 	DemandMeasurement(ctx context.Context, poolID common.ID) (*Measurement, error)
 	HistoryOfMeasurement(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*MeasurementRecord, error)
 	HistoryOfAdditives(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Chemicals, error)
-	HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]Action, error)
+	HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Action, error)
 	RecommendedChemicals(ctx context.Context, poolID common.ID) ([]ChemicalValue, error)
 }
 type SubscriptionResolver interface {
@@ -206,6 +213,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AcidChemicalValue.Value(childComplexity), true
+
+	case "Action.createdAt":
+		if e.complexity.Action.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Action.CreatedAt(childComplexity), true
+
+	case "Action.types":
+		if e.complexity.Action.Types == nil {
+			break
+		}
+
+		return e.complexity.Action.Types(childComplexity), true
 
 	case "AlkalinityChemicalValue.type":
 		if e.complexity.AlkalinityChemicalValue.Type == nil {
@@ -346,6 +367,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AuthApple(childComplexity, args["appleCode"].(string), args["deviceID"].(common.ID)), true
 
+	case "Mutation.deleteActionsLog":
+		if e.complexity.Mutation.DeleteActionsLog == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteActionsLog_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteActionsLog(childComplexity, args["poolID"].(common.ID), args["createdAt"].(time.Time)), true
+
 	case "Mutation.deleteChemicals":
 		if e.complexity.Mutation.DeleteChemicals == nil {
 			break
@@ -380,7 +413,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LogActions(childComplexity, args["poolID"].(common.ID), args["action"].([]Action)), true
+		return e.complexity.Mutation.LogActions(childComplexity, args["poolID"].(common.ID), args["action"].([]ActionType)), true
 
 	case "Mutation.updatePoolSettings":
 		if e.complexity.Mutation.UpdatePoolSettings == nil {
@@ -966,6 +999,57 @@ func (ec *executionContext) field_Mutation_authApple_argsDeviceID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteActionsLog_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteActionsLog_argsPoolID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["poolID"] = arg0
+	arg1, err := ec.field_Mutation_deleteActionsLog_argsCreatedAt(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["createdAt"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteActionsLog_argsPoolID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["poolID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("poolID"))
+	if tmp, ok := rawArgs["poolID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteActionsLog_argsCreatedAt(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (time.Time, error) {
+	if _, ok := rawArgs["createdAt"]; !ok {
+		var zeroVal time.Time
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+	if tmp, ok := rawArgs["createdAt"]; ok {
+		return ec.unmarshalNDate2timeᚐTime(ctx, tmp)
+	}
+
+	var zeroVal time.Time
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteChemicals_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1104,18 +1188,18 @@ func (ec *executionContext) field_Mutation_logActions_argsPoolID(
 func (ec *executionContext) field_Mutation_logActions_argsAction(
 	ctx context.Context,
 	rawArgs map[string]any,
-) ([]Action, error) {
+) ([]ActionType, error) {
 	if _, ok := rawArgs["action"]; !ok {
-		var zeroVal []Action
+		var zeroVal []ActionType
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("action"))
 	if tmp, ok := rawArgs["action"]; ok {
-		return ec.unmarshalNAction2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx, tmp)
+		return ec.unmarshalNActionType2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionTypeᚄ(ctx, tmp)
 	}
 
-	var zeroVal []Action
+	var zeroVal []ActionType
 	return zeroVal, nil
 }
 
@@ -1720,6 +1804,94 @@ func (ec *executionContext) fieldContext_AcidChemicalValue_value(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Action_types(ctx context.Context, field graphql.CollectedField, obj *Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_types(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Types, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]ActionType)
+	fc.Result = res
+	return ec.marshalNActionType2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionTypeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_types(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ActionType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Action_createdAt(ctx context.Context, field graphql.CollectedField, obj *Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDate2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Date does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2668,7 +2840,7 @@ func (ec *executionContext) _Mutation_logActions(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().LogActions(rctx, fc.Args["poolID"].(common.ID), fc.Args["action"].([]Action))
+		return ec.resolvers.Mutation().LogActions(rctx, fc.Args["poolID"].(common.ID), fc.Args["action"].([]ActionType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2703,6 +2875,61 @@ func (ec *executionContext) fieldContext_Mutation_logActions(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_logActions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteActionsLog(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteActionsLog(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteActionsLog(rctx, fc.Args["poolID"].(common.ID), fc.Args["createdAt"].(time.Time))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteActionsLog(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteActionsLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3562,9 +3789,9 @@ func (ec *executionContext) _Query_historyOfActions(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]Action)
+	res := resTmp.([]*Action)
 	fc.Result = res
-	return ec.marshalNAction2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx, field.Selections, res)
+	return ec.marshalNAction2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_historyOfActions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3574,7 +3801,13 @@ func (ec *executionContext) fieldContext_Query_historyOfActions(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Action does not have child fields")
+			switch field.Name {
+			case "types":
+				return ec.fieldContext_Action_types(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Action_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Action", field.Name)
 		},
 	}
 	defer func() {
@@ -6249,6 +6482,50 @@ func (ec *executionContext) _AcidChemicalValue(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var actionImplementors = []string{"Action"}
+
+func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, obj *Action) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, actionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Action")
+		case "types":
+			out.Values[i] = ec._Action_types(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Action_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var alkalinityChemicalValueImplementors = []string{"AlkalinityChemicalValue", "ChemicalValue"}
 
 func (ec *executionContext) _AlkalinityChemicalValue(ctx context.Context, sel ast.SelectionSet, obj *AlkalinityChemicalValue) graphql.Marshaler {
@@ -6573,6 +6850,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "logActions":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_logActions(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteActionsLog":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteActionsLog(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -7455,34 +7739,7 @@ func (ec *executionContext) unmarshalNAcidChemicalValueInput2ᚖgithubᚗcomᚋP
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNAction2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx context.Context, v any) (Action, error) {
-	var res Action
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNAction2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx context.Context, sel ast.SelectionSet, v Action) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNAction2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx context.Context, v any) ([]Action, error) {
-	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]Action, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNAction2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNAction2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx context.Context, sel ast.SelectionSet, v []Action) graphql.Marshaler {
+func (ec *executionContext) marshalNAction2ᚕᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionᚄ(ctx context.Context, sel ast.SelectionSet, v []*Action) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7506,7 +7763,88 @@ func (ec *executionContext) marshalNAction2ᚕgithubᚗcomᚋPoolHealthᚋPoolHe
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAction2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx, sel, v[i])
+			ret[i] = ec.marshalNAction2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAction2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐAction(ctx context.Context, sel ast.SelectionSet, v *Action) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Action(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNActionType2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionType(ctx context.Context, v any) (ActionType, error) {
+	var res ActionType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNActionType2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionType(ctx context.Context, sel ast.SelectionSet, v ActionType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNActionType2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionTypeᚄ(ctx context.Context, v any) ([]ActionType, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]ActionType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNActionType2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNActionType2ᚕgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []ActionType) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNActionType2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐActionType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

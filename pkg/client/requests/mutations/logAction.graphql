@@ -1,0 +1,3 @@
+mutation logActions($poolID: ID!, $actions: [ActionType!]!){
+    logActions(poolID: $poolID, action: $actions)
+}
