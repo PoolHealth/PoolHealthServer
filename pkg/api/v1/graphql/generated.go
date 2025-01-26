@@ -93,6 +93,11 @@ type ComplexityRoot struct {
 		Measurement func(childComplexity int) int
 	}
 
+	Migration struct {
+		ID     func(childComplexity int) int
+		Status func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AddChemicals       func(childComplexity int, input ChemicalInput) int
 		AddMeasurement     func(childComplexity int, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) int
@@ -102,6 +107,7 @@ type ComplexityRoot struct {
 		DeleteChemicals    func(childComplexity int, poolID common.ID, createdAt time.Time) int
 		DeleteMeasurement  func(childComplexity int, poolID common.ID, createdAt time.Time) int
 		LogActions         func(childComplexity int, poolID common.ID, action []ActionType) int
+		MigrateFromSheet   func(childComplexity int, sheetLink string) int
 		UpdatePoolSettings func(childComplexity int, poolID common.ID, settings PoolSettingsInput) int
 	}
 
@@ -127,6 +133,7 @@ type ComplexityRoot struct {
 		HistoryOfAdditives   func(childComplexity int, poolID common.ID, order Order, offset *int, limit *int) int
 		HistoryOfMeasurement func(childComplexity int, poolID common.ID, order Order, offset *int, limit *int) int
 		Me                   func(childComplexity int) int
+		MigrationStatus      func(childComplexity int, migrationID common.ID) int
 		Pools                func(childComplexity int) int
 		RecommendedChemicals func(childComplexity int, poolID common.ID) int
 	}
@@ -158,6 +165,7 @@ type MutationResolver interface {
 	LogActions(ctx context.Context, poolID common.ID, action []ActionType) (*time.Time, error)
 	DeleteActionsLog(ctx context.Context, poolID common.ID, createdAt time.Time) (bool, error)
 	UpdatePoolSettings(ctx context.Context, poolID common.ID, settings PoolSettingsInput) (*PoolSettings, error)
+	MigrateFromSheet(ctx context.Context, sheetLink string) (common.ID, error)
 }
 type PoolResolver interface {
 	Settings(ctx context.Context, obj *Pool) (*PoolSettings, error)
@@ -171,6 +179,7 @@ type QueryResolver interface {
 	HistoryOfAdditives(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Chemicals, error)
 	HistoryOfActions(ctx context.Context, poolID common.ID, order Order, offset *int, limit *int) ([]*Action, error)
 	RecommendedChemicals(ctx context.Context, poolID common.ID) ([]ChemicalValue, error)
+	MigrationStatus(ctx context.Context, migrationID common.ID) (*Migration, error)
 }
 type SubscriptionResolver interface {
 	OnCreatePool(ctx context.Context) (<-chan *Pool, error)
@@ -319,6 +328,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MeasurementRecord.Measurement(childComplexity), true
 
+	case "Migration.id":
+		if e.complexity.Migration.ID == nil {
+			break
+		}
+
+		return e.complexity.Migration.ID(childComplexity), true
+
+	case "Migration.status":
+		if e.complexity.Migration.Status == nil {
+			break
+		}
+
+		return e.complexity.Migration.Status(childComplexity), true
+
 	case "Mutation.addChemicals":
 		if e.complexity.Mutation.AddChemicals == nil {
 			break
@@ -414,6 +437,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.LogActions(childComplexity, args["poolID"].(common.ID), args["action"].([]ActionType)), true
+
+	case "Mutation.migrateFromSheet":
+		if e.complexity.Mutation.MigrateFromSheet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_migrateFromSheet_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MigrateFromSheet(childComplexity, args["sheetLink"].(string)), true
 
 	case "Mutation.updatePoolSettings":
 		if e.complexity.Mutation.UpdatePoolSettings == nil {
@@ -556,6 +591,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.migrationStatus":
+		if e.complexity.Query.MigrationStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Query_migrationStatus_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MigrationStatus(childComplexity, args["migrationID"].(common.ID)), true
 
 	case "Query.pools":
 		if e.complexity.Query.Pools == nil {
@@ -1203,6 +1250,34 @@ func (ec *executionContext) field_Mutation_logActions_argsAction(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_migrateFromSheet_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_migrateFromSheet_argsSheetLink(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sheetLink"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_migrateFromSheet_argsSheetLink(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["sheetLink"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sheetLink"))
+	if tmp, ok := rawArgs["sheetLink"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_updatePoolSettings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1626,6 +1701,34 @@ func (ec *executionContext) field_Query_historyOfMeasurement_argsLimit(
 	}
 
 	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_migrationStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_migrationStatus_argsMigrationID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["migrationID"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_migrationStatus_argsMigrationID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (common.ID, error) {
+	if _, ok := rawArgs["migrationID"]; !ok {
+		var zeroVal common.ID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("migrationID"))
+	if tmp, ok := rawArgs["migrationID"]; ok {
+		return ec.unmarshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, tmp)
+	}
+
+	var zeroVal common.ID
 	return zeroVal, nil
 }
 
@@ -2468,6 +2571,94 @@ func (ec *executionContext) fieldContext_MeasurementRecord_createdAt(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Migration_id(ctx context.Context, field graphql.CollectedField, obj *Migration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Migration_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(common.ID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Migration_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Migration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Migration_status(ctx context.Context, field graphql.CollectedField, obj *Migration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Migration_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MigrationStatus)
+	fc.Result = res
+	return ec.marshalNMigrationStatus2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigrationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Migration_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Migration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MigrationStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_authApple(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_authApple(ctx, field)
 	if err != nil {
@@ -2997,6 +3188,61 @@ func (ec *executionContext) fieldContext_Mutation_updatePoolSettings(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updatePoolSettings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_migrateFromSheet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_migrateFromSheet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MigrateFromSheet(rctx, fc.Args["sheetLink"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(common.ID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋcommonᚐID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_migrateFromSheet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_migrateFromSheet_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3873,6 +4119,67 @@ func (ec *executionContext) fieldContext_Query_recommendedChemicals(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_recommendedChemicals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_migrationStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_migrationStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MigrationStatus(rctx, fc.Args["migrationID"].(common.ID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Migration)
+	fc.Result = res
+	return ec.marshalNMigration2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_migrationStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Migration_id(ctx, field)
+			case "status":
+				return ec.fieldContext_Migration_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Migration", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_migrationStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6786,6 +7093,50 @@ func (ec *executionContext) _MeasurementRecord(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var migrationImplementors = []string{"Migration"}
+
+func (ec *executionContext) _Migration(ctx context.Context, sel ast.SelectionSet, obj *Migration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, migrationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Migration")
+		case "id":
+			out.Values[i] = ec._Migration_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Migration_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6864,6 +7215,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updatePoolSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updatePoolSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "migrateFromSheet":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_migrateFromSheet(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -7212,6 +7570,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_recommendedChemicals(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "migrationStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_migrationStatus(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8182,6 +8562,30 @@ func (ec *executionContext) marshalNMeasurementRecord2ᚖgithubᚗcomᚋPoolHeal
 		return graphql.Null
 	}
 	return ec._MeasurementRecord(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMigration2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigration(ctx context.Context, sel ast.SelectionSet, v Migration) graphql.Marshaler {
+	return ec._Migration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMigration2ᚖgithubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigration(ctx context.Context, sel ast.SelectionSet, v *Migration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Migration(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMigrationStatus2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigrationStatus(ctx context.Context, v any) (MigrationStatus, error) {
+	var res MigrationStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMigrationStatus2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐMigrationStatus(ctx context.Context, sel ast.SelectionSet, v MigrationStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNOrder2githubᚗcomᚋPoolHealthᚋPoolHealthServerᚋpkgᚋapiᚋv1ᚋgraphqlᚐOrder(ctx context.Context, v any) (Order, error) {

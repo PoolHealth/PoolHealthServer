@@ -6,6 +6,7 @@ package graphql
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -137,6 +138,24 @@ func (r *mutationResolver) UpdatePoolSettings(ctx context.Context, poolID common
 	}
 
 	return PoolSettingsFromCommon(res)
+}
+
+// MigrateFromSheet is the resolver for the migrateFromSheet field.
+func (r *mutationResolver) MigrateFromSheet(ctx context.Context, sheetLink string) (common.ID, error) {
+	user, err := authPkg.GetUser(ctx)
+	if err != nil {
+		return common.ID{}, castGQLError(ctx, err)
+	}
+
+	sheetLinkPart := strings.Replace(sheetLink, "https://docs.google.com/spreadsheets/d/", "", 1)
+	sheetLinkSliced := strings.Split(sheetLinkPart, "/")
+	if len(sheetLinkSliced) < 1 {
+		return common.ID{}, gqlerror.Errorf("invalid sheet link")
+	}
+
+	id := r.migrator.Migrate(ctx, user.ID, sheetLinkSliced[0])
+
+	return common.ID(id), nil
 }
 
 // Settings is the resolver for the settings field.
@@ -278,6 +297,21 @@ func (r *queryResolver) RecommendedChemicals(ctx context.Context, poolID common.
 	}
 
 	return ChemicalValuesFromCommonProduct(res), nil
+}
+
+// MigrationStatus is the resolver for the migrationStatus field.
+func (r *queryResolver) MigrationStatus(ctx context.Context, migrationID common.ID) (*Migration, error) {
+	user, err := authPkg.GetUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := r.migrator.Migration(ctx, user.ID, uuid.UUID(migrationID))
+	if err != nil {
+		return nil, castGQLError(ctx, err)
+	}
+
+	return MigrationFromCommon(status), nil
 }
 
 // OnCreatePool is the resolver for the onCreatePool field.

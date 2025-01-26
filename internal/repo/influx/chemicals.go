@@ -31,7 +31,7 @@ func (d *db) CreateChemicals(ctx context.Context, rec *common.Chemicals) error {
 		p.AddField(common.ChemicalProductNames[k], v)
 	}
 
-	return d.writeAPI.WritePoint(ctx, p)
+	return d.writePoint(ctx, p)
 }
 
 func (d *db) QueryChemicals(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Chemicals, error) {

@@ -1,0 +1,6 @@
+query migration($id: ID!) {
+    migrationStatus(migrationID: $id) {
+        id
+        status
+    }
+}

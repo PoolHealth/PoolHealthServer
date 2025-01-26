@@ -15,6 +15,7 @@ type Manager interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 	List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
+	SearchPoolByName(ctx context.Context, userID uuid.UUID, name string) (*common.Pool, error)
 	SubscribeOnCreate(ctx context.Context) (<-chan *common.Pool, error)
 	SubscribeOnUpdate(ctx context.Context) (<-chan *common.Pool, error)
 	SubscribeOnDelete(ctx context.Context) (<-chan uuid.UUID, error)
@@ -71,6 +72,21 @@ func (m *manager) Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool
 
 func (m *manager) List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error) {
 	return m.repo.ListPool(ctx, userID)
+}
+
+func (m *manager) SearchPoolByName(ctx context.Context, userID uuid.UUID, name string) (*common.Pool, error) {
+	pools, err := m.repo.ListPool(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pool := range pools {
+		if pool.Name == name {
+			return &pool, nil
+		}
+	}
+
+	return nil, common.ErrPoolNotFound
 }
 
 func (m *manager) SubscribeOnCreate(ctx context.Context) (<-chan *common.Pool, error) {

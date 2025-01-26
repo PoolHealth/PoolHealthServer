@@ -35,7 +35,7 @@ func (d *db) LogActions(ctx context.Context, poolID uuid.UUID, actions *common.A
 		p.AddField(common.ActionTypeNames[v], true)
 	}
 
-	return d.writeAPI.WritePoint(ctx, p)
+	return d.writePoint(ctx, p)
 }
 
 func (d *db) QueryActions(

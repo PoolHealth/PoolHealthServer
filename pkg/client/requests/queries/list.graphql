@@ -1,0 +1,17 @@
+query list{
+  pools{
+    id
+    name
+    volume
+    settings{
+      type
+      shape
+      usageType
+      locationType
+      coordinates{
+        latitude
+        longitude
+      }
+    }
+  }
+}

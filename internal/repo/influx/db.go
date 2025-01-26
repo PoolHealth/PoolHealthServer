@@ -1,9 +1,15 @@
 package influx
 
 import (
+	"context"
+	"errors"
+
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/influxdata/influxdb-client-go/v2/api/http"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 
+	"github.com/PoolHealth/PoolHealthServer/common"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
 )
 
@@ -39,4 +45,22 @@ func New(addr, token, org, bucket string, logger log.Logger) (DB, error) {
 		bucket:    bucket,
 		log:       logger,
 	}, nil
+}
+
+func (d *db) writePoint(ctx context.Context, point ...*write.Point) error {
+	err := d.writeAPI.WritePoint(ctx, point...)
+	if err == nil {
+		return nil
+	}
+
+	httpErr := &http.Error{}
+	if !errors.As(err, &httpErr) {
+		return err
+	}
+
+	if httpErr.StatusCode == 422 {
+		return common.ErrRecordAlreadyExists
+	}
+
+	return err
 }

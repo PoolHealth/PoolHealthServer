@@ -1,0 +1,3 @@
+mutation migrate($sheetLink: String!){
+    migrateFromSheet(sheetLink: $sheetLink)
+}

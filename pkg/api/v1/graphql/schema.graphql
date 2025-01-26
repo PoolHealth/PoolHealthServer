@@ -11,6 +11,7 @@ type Query {
     historyOfAdditives(poolID: ID!, order: Order!, offset: Int, limit: Int): [Chemicals!]!
     historyOfActions(poolID: ID!, order: Order!, offset: Int, limit: Int): [Action!]!
     recommendedChemicals(poolID: ID!): [ChemicalValue!]!
+    migrationStatus(migrationID: ID!): Migration!
 }
 
 type Mutation {
@@ -31,6 +32,7 @@ type Mutation {
         poolID: ID!
         settings: PoolSettingsInput!
     ): PoolSettings!
+    migrateFromSheet(sheetLink: String!): ID!
 }
 
 type Subscription {
@@ -204,4 +206,16 @@ type Coordinates {
 input CoordinatesInput {
     latitude: Float!
     longitude: Float!
+}
+
+type Migration {
+    id: ID!
+    status: MigrationStatus!
+}
+
+enum MigrationStatus {
+    Unknown
+    Pending
+    Done
+    Failed
 }

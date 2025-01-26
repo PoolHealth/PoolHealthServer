@@ -45,7 +45,7 @@ func (d *db) CreateMeasurement(ctx context.Context, rec common.Measurement) erro
 		p.AddField(alkalinityKey, rec.Alkalinity.Float64)
 	}
 
-	return d.writeAPI.WritePoint(ctx, p)
+	return d.writePoint(ctx, p)
 }
 
 func (d *db) QueryMeasurement(ctx context.Context, poolID uuid.UUID, order common.Order) ([]common.Measurement, error) {

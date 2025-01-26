@@ -8,5 +8,7 @@ extensions:
         Authorization: ${TOKEN}
     Production:
       url: https://poolhealth.net/v1/query
+      headers:
+        Authorization: ${TOKEN}
 
 

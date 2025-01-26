@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/ecslogrus"
 
+	"github.com/PoolHealth/PoolHealthServer/internal/adapters/sheets"
 	"github.com/PoolHealth/PoolHealthServer/internal/repo/influx"
 	repoRedis "github.com/PoolHealth/PoolHealthServer/internal/repo/redis"
 	"github.com/PoolHealth/PoolHealthServer/internal/services/actionsmanager"
@@ -25,6 +26,7 @@ import (
 	"github.com/PoolHealth/PoolHealthServer/internal/services/measurementhistory"
 	"github.com/PoolHealth/PoolHealthServer/internal/services/poolmanager"
 	"github.com/PoolHealth/PoolHealthServer/internal/services/poolsettingsmanager"
+	"github.com/PoolHealth/PoolHealthServer/internal/services/sheetsmigrator"
 	"github.com/PoolHealth/PoolHealthServer/internal/transport/server"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
@@ -107,10 +109,22 @@ func main() {
 
 	poolSettingsManager := poolsettingsmanager.NewPoolSettingsManager(repo, logger.WithField(pkgKey, "poolsettingsmanager"))
 
+	sheetAdapter := sheets.New(logger.WithField(pkgKey, "sheet"))
+	if err = sheetAdapter.Start(context.Background()); err != nil {
+		panic(err)
+	}
+
+	migrateMnager := sheetsmigrator.NewMigrator(
+		sheetAdapter,
+		poolManager,
+		idb,
+		logger.WithField(pkgKey, "sheetsmigrator"),
+	)
+
 	resolvers := graphql.NewResolver(
 		logger.WithField(pkgKey, "graphql"),
 		poolManager, mhistory, ahistory, est, actionsManager, poolSettingsManager,
-		authM,
+		authM, migrateMnager,
 	)
 
 	s := server.NewServer(

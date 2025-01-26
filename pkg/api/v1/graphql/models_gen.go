@@ -90,6 +90,11 @@ type MeasurementRecord struct {
 	CreatedAt   time.Time    `json:"createdAt"`
 }
 
+type Migration struct {
+	ID     common.ID       `json:"id"`
+	Status MigrationStatus `json:"status"`
+}
+
 type Mutation struct {
 }
 
@@ -353,6 +358,51 @@ func (e *LocationType) UnmarshalGQL(v any) error {
 }
 
 func (e LocationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MigrationStatus string
+
+const (
+	MigrationStatusUnknown MigrationStatus = "Unknown"
+	MigrationStatusPending MigrationStatus = "Pending"
+	MigrationStatusDone    MigrationStatus = "Done"
+	MigrationStatusFailed  MigrationStatus = "Failed"
+)
+
+var AllMigrationStatus = []MigrationStatus{
+	MigrationStatusUnknown,
+	MigrationStatusPending,
+	MigrationStatusDone,
+	MigrationStatusFailed,
+}
+
+func (e MigrationStatus) IsValid() bool {
+	switch e {
+	case MigrationStatusUnknown, MigrationStatusPending, MigrationStatusDone, MigrationStatusFailed:
+		return true
+	}
+	return false
+}
+
+func (e MigrationStatus) String() string {
+	return string(e)
+}
+
+func (e *MigrationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MigrationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MigrationStatus", str)
+	}
+	return nil
+}
+
+func (e MigrationStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

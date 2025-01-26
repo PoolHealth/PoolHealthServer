@@ -63,6 +63,11 @@ type poolSettingsManager interface {
 	GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error)
 }
 
+type migrator interface {
+	Migrate(ctx context.Context, userID uuid.UUID, sheetID string) uuid.UUID
+	Migration(ctx context.Context, userID, id uuid.UUID) (common.Migration, error)
+}
+
 type auth interface {
 	Auth(ctx context.Context, token string) (*common.Session, error)
 }
@@ -75,6 +80,7 @@ type Resolver struct {
 	estimator estimator
 	actions
 	poolSettingsManager
+	migrator
 
 	log logger
 }
@@ -139,6 +145,7 @@ func NewResolver(
 	actions actions,
 	poolSettingsManager poolSettingsManager,
 	auth auth,
+	migrator migrator,
 ) *Resolver {
 	return &Resolver{
 		auth:                auth,
@@ -148,6 +155,7 @@ func NewResolver(
 		estimator:           estimator,
 		actions:             actions,
 		poolSettingsManager: poolSettingsManager,
+		migrator:            migrator,
 		log:                 logger,
 	}
 }
