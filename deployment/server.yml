@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/poolhealth/poolhealthserver:v0.3.0
+          image: ghcr.io/poolhealth/poolhealthserver:v0.4.0
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -82,10 +82,15 @@ spec:
           volumeMounts:
             - name: keys
               mountPath: /keys/
+            - name: google-credentials
+              mountPath: /.google/
       volumes:
         - name: keys
           secret:
             secretName: apple-auth
+        - name: google-credentials
+          secret:
+            secretName: google-credentials
       imagePullSecrets:
         - name: regcred
 ---

@@ -32,7 +32,7 @@ func New(logger log.Logger) *SheetClient {
 }
 
 func (s *SheetClient) Start(ctx context.Context) error {
-	b, err := os.ReadFile("credentials.json")
+	b, err := os.ReadFile(".google/credentials.json")
 	if err != nil {
 		return errors.Wrap(err, "Unable to read client secret file")
 	}
@@ -319,7 +319,7 @@ func getClient(ctx context.Context, config *oauth2.Config) (*http.Client, error)
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "token.json"
+	tokFile := ".google/token.json"
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		return nil, err
