@@ -47,6 +47,8 @@ type configuration struct {
 	InfluxDBToken   string `envconfig:"INFLUXDB_TOKEN" default:""`
 	InfluxDBOrg     string `envconfig:"INFLUXDB_ORG" default:"poolhealth"`
 	InfluxDBBucket  string `envconfig:"INFLUXDB_BUCKET" default:"history"`
+
+	SheetsCredentialsPath string `envconfig:"SHEETS_CREDENTIALS_PATH" default:".google/"`
 }
 
 func main() {
@@ -109,7 +111,7 @@ func main() {
 
 	poolSettingsManager := poolsettingsmanager.NewPoolSettingsManager(repo, logger.WithField(pkgKey, "poolsettingsmanager"))
 
-	sheetAdapter := sheets.New(logger.WithField(pkgKey, "sheet"))
+	sheetAdapter := sheets.New(logger.WithField(pkgKey, "sheet"), cfg.SheetsCredentialsPath)
 	if err = sheetAdapter.Start(context.Background()); err != nil {
 		panic(err)
 	}

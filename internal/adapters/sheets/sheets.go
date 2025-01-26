@@ -22,17 +22,18 @@ import (
 )
 
 type SheetClient struct {
-	service *sheets.Service
+	service         *sheets.Service
+	credentialsPath string
 
 	log log.Logger
 }
 
-func New(logger log.Logger) *SheetClient {
-	return &SheetClient{log: logger}
+func New(logger log.Logger, credentialsPath string) *SheetClient {
+	return &SheetClient{credentialsPath: credentialsPath, log: logger}
 }
 
 func (s *SheetClient) Start(ctx context.Context) error {
-	b, err := os.ReadFile(".google/credentials.json")
+	b, err := os.ReadFile(s.credentialsPath + "credentials.json")
 	if err != nil {
 		return errors.Wrap(err, "Unable to read client secret file")
 	}
@@ -43,7 +44,7 @@ func (s *SheetClient) Start(ctx context.Context) error {
 		return errors.Wrap(err, "Unable to parse client secret file to config")
 	}
 
-	client, err := getClient(ctx, config)
+	client, err := getClient(ctx, s.credentialsPath, config)
 	if err != nil {
 		return errors.Wrap(err, "Unable to get client")
 	}
@@ -315,11 +316,11 @@ func parseDate(value string, year int) (time.Time, error) {
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getClient(ctx context.Context, config *oauth2.Config) (*http.Client, error) {
+func getClient(ctx context.Context, path string, config *oauth2.Config) (*http.Client, error) {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := ".google/token.json"
+	tokFile := path + "token.json"
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		return nil, err
