@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -73,57 +74,56 @@ func (s *SheetClient) HasSheet(id string) (bool, error) {
 }
 
 func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Pool, error) {
-	result, err := s.service.Spreadsheets.Get(sheetID).Context(ctx).IncludeGridData(true).Do()
+	result, err := s.service.Spreadsheets.Get(sheetID).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	pools := make([]models.Pool, 0, len(result.Sheets))
 
-	for _, sh := range result.Sheets {
-		if sh.Properties.Hidden {
+	for _, meta := range result.Sheets {
+		if meta.Properties.Hidden {
 			continue
 		}
 
-		if len(sh.Data) < 1 || sh.Data[0] == nil {
-			continue
-		}
-
-		data := sh.Data[0]
-
-		if len(data.RowData) < 2 {
-			continue
-		}
-
-		rowData := data.RowData[1]
-
-		if len(rowData.Values) < 1 || rowData.Values[0] == nil {
-			continue
-		}
-
-		value, err := strconv.ParseFloat(rowData.Values[0].FormattedValue, 64)
+		sh, err := s.service.Spreadsheets.Values.Get(sheetID, meta.Properties.Title+"!A1:AE1000").Do()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to convert value to int")
+			return nil, err
 		}
 
-		measurements := make([]common.Measurement, 0, len(data.RowData)-1)
-		actions := make([]common.Action, 0, len(data.RowData)-1)
-		chemicals := make([]common.Chemicals, 0, len(data.RowData)-1)
+		if len(sh.Values) < 2 {
+			continue
+		}
+
+		rowData := sh.Values[1]
+
+		if len(rowData) < 1 || rowData[0] == nil {
+			continue
+		}
+
+		value, err := getFloat(rowData[0])
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to extract volume %s", meta.Properties.Title)
+		}
+
+		measurements := make([]common.Measurement, 0, len(sh.Values)-1)
+		actions := make([]common.Action, 0, len(sh.Values)-1)
+		chemicals := make([]common.Chemicals, 0, len(sh.Values)-1)
 
 		year := 2024
 
-		for i, v := range data.RowData {
+		for i, v := range sh.Values {
 			if i == 0 {
 				continue
 			}
-			lg := s.log.WithField("row", i)
+			lg := s.log.WithField("row", i).WithField("sheet", meta.Properties.Title)
 
-			if len(v.Values) < 2 || v.Values[1] == nil {
+			if len(v) < 2 || v[1] == nil {
 				lg.Info("skipping row")
 				continue
 			}
 
-			date, err := parseDate(v.Values[1].FormattedValue, year)
+			date, err := parseDate(v[1], year)
 			if err != nil {
 				lg.WithError(err).Error("failed to parse date")
 				continue
@@ -155,8 +155,8 @@ func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Po
 
 		pools = append(pools, models.Pool{
 			Pool: common.PoolData{
-				Name:   sh.Properties.Title,
-				Volume: value,
+				Name:   meta.Properties.Title,
+				Volume: value.Float64,
 			},
 			Measurements: measurements,
 			Chemicals:    chemicals,
@@ -167,7 +167,7 @@ func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Po
 	return pools, nil
 }
 
-func getAction(row *sheets.RowData) *common.Action {
+func getAction(row []any) *common.Action {
 	sheetIndexToAction := map[int]common.ActionType{
 		23: common.ActionVacuum,
 		24: common.ActionNet,
@@ -181,7 +181,10 @@ func getAction(row *sheets.RowData) *common.Action {
 	actionTypes := make([]common.ActionType, 0, len(sheetIndexToAction))
 
 	for i, action := range sheetIndexToAction {
-		if row.Values[i] != nil && row.Values[i].FormattedValue != "" {
+		if len(row) <= i {
+			break
+		}
+		if row[i] != nil && row[i] != "" {
 			actionTypes = append(actionTypes, action)
 		}
 	}
@@ -195,22 +198,26 @@ func getAction(row *sheets.RowData) *common.Action {
 	return nil
 }
 
-func getChemicals(row *sheets.RowData, lg log.Logger) *common.Chemicals {
+func getChemicals(row []any, lg log.Logger) *common.Chemicals {
 	chemicals := make(map[common.ChemicalProduct]float64)
 
 	for i := 9; i < 18; i++ {
-		product, value := getChemicalProduct(row.Values, i, lg)
+		if len(row) <= i {
+			break
+		}
+		product, value := getChemicalProduct(row, i, lg)
 
 		if value.Valid {
 			chemicals[product] = value.Float64
 		}
 	}
 	i := 22
+	if len(row) > i {
+		product, value := getChemicalProduct(row, i, lg)
 
-	product, value := getChemicalProduct(row.Values, i, lg)
-
-	if value.Valid {
-		chemicals[product] = value.Float64
+		if value.Valid {
+			chemicals[product] = value.Float64
+		}
 	}
 
 	if len(chemicals) > 0 {
@@ -222,7 +229,7 @@ func getChemicals(row *sheets.RowData, lg log.Logger) *common.Chemicals {
 	return nil
 }
 
-func getChemicalProduct(values []*sheets.CellData, i int, lg log.Logger) (common.ChemicalProduct, null.Float) {
+func getChemicalProduct(values []any, i int, lg log.Logger) (common.ChemicalProduct, null.Float) {
 	if values[i] == nil {
 		return 0, null.Float{}
 	}
@@ -242,7 +249,7 @@ func getChemicalProduct(values []*sheets.CellData, i int, lg log.Logger) (common
 
 	product, ok := sheetIndexToChemicalProduct[i]
 	if !ok {
-		lg.WithField("product", values[i].FormattedValue).Warn("unknown chemical product")
+		lg.WithField("product", values[i]).Warn("unknown chemical product")
 
 		return 0, null.Float{}
 	}
@@ -250,10 +257,10 @@ func getChemicalProduct(values []*sheets.CellData, i int, lg log.Logger) (common
 	return product, getFloatFromCells(values, i, lg)
 }
 
-func getMeasurement(row *sheets.RowData, lg log.Logger) *common.Measurement {
-	chlorine := getFloatFromCells(row.Values, 2, lg)
-	ph := getFloatFromCells(row.Values, 4, lg)
-	alkalinity := getFloatFromCells(row.Values, 6, lg)
+func getMeasurement(row []any, lg log.Logger) *common.Measurement {
+	chlorine := getFloatFromCells(row, 2, lg)
+	ph := getFloatFromCells(row, 4, lg)
+	alkalinity := getFloatFromCells(row, 6, lg)
 
 	if chlorine.Valid || ph.Valid || alkalinity.Valid {
 		return &common.Measurement{
@@ -266,8 +273,12 @@ func getMeasurement(row *sheets.RowData, lg log.Logger) *common.Measurement {
 	return nil
 }
 
-func getFloatFromCells(cells []*sheets.CellData, i int, lg log.Logger) null.Float {
-	value, err := getFloat(cells[i].FormattedValue)
+func getFloatFromCells(cells []any, i int, lg log.Logger) null.Float {
+	if len(cells) <= i {
+		return null.Float{}
+	}
+
+	value, err := getFloat(cells[i])
 	if err != nil {
 		lg.WithError(err).WithField("column", i).Error("failed to convert value to float")
 	}
@@ -275,20 +286,34 @@ func getFloatFromCells(cells []*sheets.CellData, i int, lg log.Logger) null.Floa
 	return value
 }
 
-func getFloat(value string) (null.Float, error) {
-	if value == "" {
-		return null.Float{}, nil
+func getFloat(el any) (null.Float, error) {
+	switch v := el.(type) {
+	case float64:
+		if v == 0 {
+			return null.Float{}, nil
+		}
+		return null.FloatFrom(v), nil
+	case string:
+		if v == "" {
+			return null.Float{}, nil
+		}
+		val, err := strconv.ParseFloat(strings.Replace(v, ",", ".", 1), 64)
+		if err != nil {
+			return null.Float{}, errors.Wrap(err, "failed to convert value to float")
+		}
+
+		return null.FloatFrom(val), nil
 	}
 
-	val, err := strconv.ParseFloat(strings.Replace(value, ",", ".", 1), 64)
-	if err != nil {
-		return null.Float{}, errors.Wrap(err, "failed to convert value to float")
-	}
-
-	return null.FloatFrom(val), nil
+	return null.Float{}, fmt.Errorf("failed to convert value %v whith type %T to float", el, el)
 }
 
-func parseDate(value string, year int) (time.Time, error) {
+func parseDate(el any, year int) (time.Time, error) {
+	value, ok := el.(string)
+	if !ok {
+		return time.Time{}, fmt.Errorf("failed to convert value %v whith type %T to string", el, el)
+	}
+
 	date, err := time.Parse("02/01", value)
 	if err == nil {
 		date = date.AddDate(year, 0, 0)

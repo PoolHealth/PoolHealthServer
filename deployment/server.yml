@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/poolhealth/poolhealthserver:v0.4.1
+          image: ghcr.io/poolhealth/poolhealthserver:v0.4.2
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -74,6 +74,8 @@ spec:
               value: "keydb-headless:6379"
             - name: INFLUXDB_ADDRESS
               value: http://influxdb-influxdb2
+            - name: SHEETS_CREDENTIALS_PATH
+              value: "/.google/"
             - name: INFLUXDB_TOKEN
               valueFrom:
                 secretKeyRef:
