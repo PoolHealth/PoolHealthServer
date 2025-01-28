@@ -1,0 +1,10 @@
+query historyOfMeasurement($poolID: ID!) {
+  historyOfMeasurement(poolID: $poolID, order: DESC) {
+    createdAt
+    measurement{
+      chlorine
+      ph
+      alkalinity
+    }
+  }
+}

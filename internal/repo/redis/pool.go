@@ -25,6 +25,7 @@ type poolRepo interface {
 
 func (d *db) CreatePool(ctx context.Context, id uuid.UUID, userID uuid.UUID, rec *common.PoolData) error {
 	key := d.keyBuilder.UserPools(userID)
+
 	return d.db.Watch(ctx, func(tx *redis.Tx) error {
 		ok, err := d.HasPool(ctx, id)
 		if err != nil {
@@ -35,29 +36,11 @@ func (d *db) CreatePool(ctx context.Context, id uuid.UUID, userID uuid.UUID, rec
 			return common.ErrPoolAlreadyExists
 		}
 
-		userPools := make([]string, 0)
-		data, err := tx.Get(ctx, key).Bytes()
-		if err != nil && !errors.Is(err, redis.Nil) {
-			return err
-		}
-
-		if data != nil {
-			if err = json.Unmarshal(data, &userPools); err != nil {
-				return err
-			}
-		}
-
-		userPools = append(userPools, d.keyBuilder.Pool(id))
-		data, err = json.Marshal(userPools)
-		if err != nil {
-			return err
-		}
-
 		if err = d.SetPool(ctx, id, rec); err != nil {
 			return err
 		}
 
-		return tx.Set(ctx, key, data, 0).Err()
+		return tx.SAdd(ctx, key, d.keyBuilder.Pool(id)).Err()
 	}, key)
 }
 
@@ -138,7 +121,7 @@ func (d *db) DeletePool(ctx context.Context, id uuid.UUID) error {
 
 func (d *db) UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error) {
 	key := d.keyBuilder.UserPools(userID)
-	data, err := d.db.Get(ctx, key).Bytes()
+	exist, err := d.db.SIsMember(ctx, key, d.keyBuilder.Pool(id)).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return false, nil
@@ -146,40 +129,25 @@ func (d *db) UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (o
 		return false, err
 	}
 
-	var poolKeys []string
-	if err = json.Unmarshal(data, &poolKeys); err != nil {
-		return false, err
-	}
-
-	poolKey := d.keyBuilder.Pool(id)
-	for _, key = range poolKeys {
-		if key == poolKey {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return exist, nil
 }
 
 func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error) {
 	userKey := d.keyBuilder.UserPools(userID)
 
-	data, err := d.db.Get(ctx, userKey).Bytes()
+	poolKeys, err := d.db.SMembers(ctx, userKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return []common.Pool{}, nil
 		}
-		return nil, err
-	}
 
-	var poolKeys []string
-	if err = json.Unmarshal(data, &poolKeys); err != nil {
 		return nil, err
 	}
 
 	prefix := d.keyBuilder.Pools()
 
 	pools := make([]common.Pool, len(poolKeys))
+
 	for i, key := range poolKeys {
 		if len(key) < 4 {
 			return nil, common.ErrInvalidPoolID
@@ -192,7 +160,7 @@ func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, err
 
 		pool := common.PoolData{}
 
-		data, err = d.db.Get(ctx, key).Bytes()
+		data, err := d.db.Get(ctx, key).Bytes()
 		if err != nil {
 			return nil, err
 		}

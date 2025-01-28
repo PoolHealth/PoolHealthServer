@@ -88,6 +88,10 @@ func main() {
 	db := redis.NewClient(&redis.Options{Addr: cfg.RedisAddress})
 	repo := repoRedis.NewDB(db, logger.WithField(pkgKey, "repo"))
 
+	if err := repo.Migrate(ctx); err != nil {
+		panic(err)
+	}
+
 	poolManager := poolmanager.NewManager(repo, logger.WithField(pkgKey, "poolmanager"))
 
 	authCfg := auth2.Config()

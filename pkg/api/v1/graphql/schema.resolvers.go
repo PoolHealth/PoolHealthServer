@@ -37,7 +37,7 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 		return nil, err
 	}
 	pool, err := r.poolData.Create(ctx, user.ID, &rootCommon.PoolData{
-		Name:   name,
+		Name:   strings.TrimSpace(name),
 		Volume: volume,
 	})
 	if err != nil {

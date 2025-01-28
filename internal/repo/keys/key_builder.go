@@ -10,6 +10,7 @@ type Builder interface {
 	Version() string
 	Pools() string
 	UserPools(userID uuid.UUID) string
+	UsersPools() string
 	Pool(id uuid.UUID) string
 	Users() string
 	User(id uuid.UUID) string
@@ -30,6 +31,10 @@ func (b builder) PoolSettings(poolID uuid.UUID) string {
 
 func (b builder) UserPools(userID uuid.UUID) string {
 	return appendUUID(userIndexPool, userID)
+}
+
+func (b builder) UsersPools() string {
+	return hex.EncodeToString(userIndexPool[:])
 }
 
 func (b builder) Users() string {

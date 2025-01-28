@@ -7,13 +7,15 @@ import (
 )
 
 type Migration interface {
-	Up(ctx context.Context, tr redis.Pipeliner) error
-	Down(ctx context.Context, tr redis.Pipeliner) error
+	Up(ctx context.Context, tr *redis.Tx) error
+	Down(ctx context.Context, tr *redis.Tx) error
 	Version() uint32
 }
 
 func Migrations(version uint32) []Migration {
-	migrations := []Migration{}
+	migrations := []Migration{
+		UserPoolToSet{},
+	}
 
 	result := make([]Migration, 0, len(migrations))
 

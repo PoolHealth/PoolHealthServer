@@ -39,17 +39,14 @@ func (d *db) Migrate(ctx context.Context) error {
 	for _, el := range m {
 		d.log.WithField(versionKey, el.Version()).Info("migrating to version")
 
-		tx := d.db.TxPipeline()
+		err := d.db.Watch(ctx, func(tx *redis.Tx) error {
+			if err = el.Up(ctx, tx); err != nil {
+				return err
+			}
 
-		if err = el.Up(ctx, tx); err != nil {
-			return err
-		}
-
-		if err = d.WriteVersion(ctx, el.Version()); err != nil {
-			return err
-		}
-
-		if _, err = tx.Exec(ctx); err != nil {
+			return d.WriteVersion(ctx, tx, el.Version())
+		})
+		if err != nil {
 			return err
 		}
 
