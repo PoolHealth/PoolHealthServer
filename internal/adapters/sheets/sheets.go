@@ -23,10 +23,29 @@ import (
 )
 
 type SheetClient struct {
-	service         *sheets.Service
+	config          *oauth2.Config
 	credentialsPath string
 
 	log log.Logger
+}
+
+func (s *SheetClient) ApplyAuthCode(authCode string) error {
+	tok, err := s.config.Exchange(context.TODO(), authCode)
+	if err != nil {
+		s.log.WithError(err).Error("Unable to retrieve token from web")
+		return err
+	}
+
+	path := s.tokenPath()
+
+	s.log.WithField("path", path).Info("Saving credential file")
+
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		s.log.WithError(err).Error("Unable to open file")
+	}
+	defer f.Close()
+	return json.NewEncoder(f).Encode(tok)
 }
 
 func New(logger log.Logger, credentialsPath string) *SheetClient {
@@ -40,22 +59,10 @@ func (s *SheetClient) Start(ctx context.Context) error {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets.readonly")
+	s.config, err = google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets.readonly")
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse client secret file to config")
 	}
-
-	client, err := getClient(ctx, s.credentialsPath, config)
-	if err != nil {
-		return errors.Wrap(err, "Unable to get client")
-	}
-
-	service, err := sheets.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return err
-	}
-
-	s.service = service
 
 	return nil
 }
@@ -64,8 +71,13 @@ func (s *SheetClient) Stop() error {
 	return nil
 }
 
-func (s *SheetClient) HasSheet(id string) (bool, error) {
-	sheet, err := s.service.Spreadsheets.Get(id).Do()
+func (s *SheetClient) HasSheet(ctx context.Context, id string) (bool, error) {
+	service, err := s.service(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	sheet, err := service.Spreadsheets.Get(id).Do()
 	if err != nil {
 		return false, err
 	}
@@ -74,7 +86,12 @@ func (s *SheetClient) HasSheet(id string) (bool, error) {
 }
 
 func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Pool, error) {
-	result, err := s.service.Spreadsheets.Get(sheetID).Context(ctx).Do()
+	service, err := s.service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := service.Spreadsheets.Get(sheetID).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +103,7 @@ func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Po
 			continue
 		}
 
-		sh, err := s.service.Spreadsheets.Values.Get(sheetID, meta.Properties.Title+"!A1:AE1000").Do()
+		sh, err := service.Spreadsheets.Values.Get(sheetID, meta.Properties.Title+"!A1:AE1000").Do()
 		if err != nil {
 			return nil, err
 		}
@@ -165,6 +182,31 @@ func (s *SheetClient) GetPools(ctx context.Context, sheetID string) ([]models.Po
 	}
 
 	return pools, nil
+}
+
+func (s *SheetClient) tokenPath() string {
+	return s.credentialsPath + "token.json"
+}
+
+// Retrieve a token, saves the token, then returns the generated client.
+func (s *SheetClient) getClient(ctx context.Context) (*http.Client, error) {
+	// The file token.json stores the user's access and refresh tokens, and is
+	// created automatically when the authorization flow completes for the first
+	// time.
+	tok, err := tokenFromFile(s.tokenPath())
+	if err != nil {
+		return nil, err
+	}
+	return s.config.Client(ctx, tok), nil
+}
+
+func (s *SheetClient) service(ctx context.Context) (*sheets.Service, error) {
+	client, err := s.getClient(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to get client")
+	}
+
+	return sheets.NewService(ctx, option.WithHTTPClient(client))
 }
 
 func getAction(row []any) *common.Action {
@@ -338,19 +380,6 @@ func parseDate(el any, year int) (time.Time, error) {
 	}
 
 	return date, nil
-}
-
-// Retrieve a token, saves the token, then returns the generated client.
-func getClient(ctx context.Context, path string, config *oauth2.Config) (*http.Client, error) {
-	// The file token.json stores the user's access and refresh tokens, and is
-	// created automatically when the authorization flow completes for the first
-	// time.
-	tokFile := path + "token.json"
-	tok, err := tokenFromFile(tokFile)
-	if err != nil {
-		return nil, err
-	}
-	return config.Client(ctx, tok), nil
 }
 
 // Retrieves a token from a local file.

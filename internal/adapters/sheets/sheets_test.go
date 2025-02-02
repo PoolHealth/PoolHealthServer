@@ -33,9 +33,9 @@ func TestSheetClient_HasSheet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := New(log.NewLogger(logrus.New()))
+			s := New(log.NewLogger(logrus.New()), ".google/")
 			require.NoError(t, s.Start(context.Background()))
-			got, err := s.HasSheet(tt.args.id)
+			got, err := s.HasSheet(context.Background(), tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HasSheet() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -73,7 +73,7 @@ func TestSheetClient_GetPools(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			s := New(log.NewLogger(logrus.New()))
+			s := New(log.NewLogger(logrus.New()), ".google/")
 			require.NoError(t, s.Start(ctx))
 			got, err := s.GetPools(ctx, tt.args.sheetID)
 			if (err != nil) != tt.wantErr {

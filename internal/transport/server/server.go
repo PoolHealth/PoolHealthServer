@@ -24,10 +24,11 @@ import (
 )
 
 type Server struct {
-	resolvers   generated.ResolverRoot
-	router      *mux.Router
-	middlewares []graphql.HandlerExtension
-	wsInitFunc  transport.WebsocketInitFunc
+	resolvers     generated.ResolverRoot
+	router        *mux.Router
+	middlewares   []graphql.HandlerExtension
+	wsInitFunc    transport.WebsocketInitFunc
+	gOAuthHandler http.Handler
 
 	log log.Logger
 }
@@ -56,6 +57,7 @@ func (s *Server) Run(ctx context.Context) error {
 		w.WriteHeader(http.StatusOK)
 	}))
 	s.router.Handle("/metrics", promhttp.Handler())
+	s.router.Handle("/google-oauth", s.gOAuthHandler)
 
 	if err := server.ListenAndServe(); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
@@ -113,13 +115,15 @@ func NewServer(
 	resolvers generated.ResolverRoot,
 	middlewares []graphql.HandlerExtension,
 	wsInitFunc transport.WebsocketInitFunc,
+	gOAuthHandler http.Handler,
 	logger log.Logger,
 ) *Server {
 	return &Server{
-		resolvers:   resolvers,
-		router:      mux.NewRouter(),
-		middlewares: middlewares,
-		wsInitFunc:  wsInitFunc,
-		log:         logger,
+		resolvers:     resolvers,
+		router:        mux.NewRouter(),
+		middlewares:   middlewares,
+		wsInitFunc:    wsInitFunc,
+		gOAuthHandler: gOAuthHandler,
+		log:           logger,
 	}
 }

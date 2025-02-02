@@ -27,6 +27,7 @@ import (
 	"github.com/PoolHealth/PoolHealthServer/internal/services/poolmanager"
 	"github.com/PoolHealth/PoolHealthServer/internal/services/poolsettingsmanager"
 	"github.com/PoolHealth/PoolHealthServer/internal/services/sheetsmigrator"
+	googleOAuth "github.com/PoolHealth/PoolHealthServer/internal/transport/google_oauth_handler"
 	"github.com/PoolHealth/PoolHealthServer/internal/transport/server"
 	"github.com/PoolHealth/PoolHealthServer/pkg/api/v1/graphql"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
@@ -133,10 +134,13 @@ func main() {
 		authM, migrateMnager,
 	)
 
+	goauthHandler := googleOAuth.NewHandler(sheetAdapter)
+
 	s := server.NewServer(
 		resolvers,
 		[]gql.HandlerExtension{authM.Middleware()},
 		authM.WsInitFunc,
+		goauthHandler,
 		logger.WithField(pkgKey, "server"),
 	)
 
