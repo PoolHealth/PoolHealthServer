@@ -17,6 +17,7 @@ type Query {
 type Mutation {
     authApple(appleCode:String!, deviceID: ID!): Session!
     addPool(name: String!, volume: Float!): Pool!
+    deletePool(id:ID!): Boolean!
     addMeasurement(poolID: ID!, chlorine: Float, ph: Float, alkalinity: Float): MeasurementRecord!
     deleteMeasurement(poolID: ID!, createdAt: Date!): Boolean!
     addChemicals(

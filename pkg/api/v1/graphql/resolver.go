@@ -22,7 +22,7 @@ type logger interface {
 type poolData interface {
 	Create(ctx context.Context, userID uuid.UUID, data *common.PoolData) (pool *common.Pool, err error)
 	Update(ctx context.Context, id uuid.UUID, rec *common.PoolData) (record *common.Pool, err error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, userID, id uuid.UUID) error
 	List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 	SubscribeOnCreate(ctx context.Context) (<-chan *common.Pool, error)
 	SubscribeOnUpdate(ctx context.Context) (<-chan *common.Pool, error)

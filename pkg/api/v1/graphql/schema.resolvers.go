@@ -47,6 +47,20 @@ func (r *mutationResolver) AddPool(ctx context.Context, name string, volume floa
 	return PoolFromCommon(pool), nil
 }
 
+// DeletePool is the resolver for the deletePool field.
+func (r *mutationResolver) DeletePool(ctx context.Context, id common.ID) (bool, error) {
+	user, err := authPkg.GetUser(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if err := r.poolData.Delete(ctx, user.ID, uuid.UUID(id)); err != nil {
+		return false, castGQLError(ctx, err)
+	}
+
+	return true, nil
+}
+
 // AddMeasurement is the resolver for the addMeasurement field.
 func (r *mutationResolver) AddMeasurement(ctx context.Context, poolID common.ID, chlorine *float64, ph *float64, alkalinity *float64) (*MeasurementRecord, error) {
 	if err := r.checkAccessToPool(ctx, uuid.UUID(poolID)); err != nil {

@@ -25,6 +25,7 @@ import (
 type SheetClient struct {
 	config          *oauth2.Config
 	credentialsPath string
+	token           *oauth2.Token
 
 	log log.Logger
 }
@@ -36,16 +37,9 @@ func (s *SheetClient) ApplyAuthCode(authCode string) error {
 		return err
 	}
 
-	path := s.tokenPath()
+	s.token = tok
 
-	s.log.WithField("path", path).Info("Saving credential file")
-
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		s.log.WithError(err).Error("Unable to open file")
-	}
-	defer f.Close()
-	return json.NewEncoder(f).Encode(tok)
+	return nil
 }
 
 func New(logger log.Logger, credentialsPath string) *SheetClient {
@@ -193,11 +187,16 @@ func (s *SheetClient) getClient(ctx context.Context) (*http.Client, error) {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tok, err := tokenFromFile(s.tokenPath())
-	if err != nil {
-		return nil, err
+	if s.token == nil {
+		tok, err := tokenFromFile(s.tokenPath())
+		if err != nil {
+			return nil, err
+		}
+
+		s.token = tok
 	}
-	return s.config.Client(ctx, tok), nil
+
+	return s.config.Client(ctx, s.token), nil
 }
 
 func (s *SheetClient) service(ctx context.Context) (*sheets.Service, error) {

@@ -12,7 +12,7 @@ import (
 type Manager interface {
 	Create(ctx context.Context, userID uuid.UUID, data *common.PoolData) (pool *common.Pool, err error)
 	Update(ctx context.Context, id uuid.UUID, rec *common.PoolData) (record *common.Pool, err error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, userID, id uuid.UUID) error
 	Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 	List(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 	SearchPoolByName(ctx context.Context, userID uuid.UUID, name string) (*common.Pool, error)
@@ -62,7 +62,16 @@ func (m *manager) Update(ctx context.Context, id uuid.UUID, rec *common.PoolData
 	}, nil
 }
 
-func (m *manager) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *manager) Delete(ctx context.Context, userID, id uuid.UUID) error {
+	ok, err := m.repo.UserHasPool(ctx, id, userID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return common.ErrPoolNotFound
+	}
+
 	return m.repo.DeletePool(ctx, id)
 }
 
