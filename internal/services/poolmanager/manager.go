@@ -24,7 +24,7 @@ type Manager interface {
 type repo interface {
 	CreatePool(ctx context.Context, userID uuid.UUID, id uuid.UUID, rec *common.PoolData) error
 	UpdatePool(ctx context.Context, id uuid.UUID, rec *common.PoolData) error
-	DeletePool(ctx context.Context, id uuid.UUID) error
+	DeletePool(ctx context.Context, id, userID uuid.UUID) error
 	ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 	UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error)
 }
@@ -72,7 +72,7 @@ func (m *manager) Delete(ctx context.Context, userID, id uuid.UUID) error {
 		return common.ErrPoolNotFound
 	}
 
-	return m.repo.DeletePool(ctx, id)
+	return m.repo.DeletePool(ctx, id, userID)
 }
 
 func (m *manager) Has(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error) {

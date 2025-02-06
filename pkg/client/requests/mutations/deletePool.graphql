@@ -1,0 +1,3 @@
+mutation deletePool($id: ID!) {
+  deletePool(id: $id)
+}

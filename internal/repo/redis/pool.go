@@ -19,7 +19,7 @@ type poolRepo interface {
 	GetPool(ctx context.Context, id uuid.UUID) (*common.Pool, error)
 	HasPool(ctx context.Context, id uuid.UUID) (ok bool, err error)
 	UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error)
-	DeletePool(ctx context.Context, id uuid.UUID) error
+	DeletePool(ctx context.Context, id, userID uuid.UUID) error
 	ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, error)
 }
 
@@ -115,8 +115,17 @@ func (d *db) HasPool(ctx context.Context, id uuid.UUID) (ok bool, err error) {
 	return d.hasPool(ctx, d.db, id)
 }
 
-func (d *db) DeletePool(ctx context.Context, id uuid.UUID) error {
-	return d.db.Del(ctx, d.keyBuilder.Pool(id)).Err()
+func (d *db) DeletePool(ctx context.Context, id, userID uuid.UUID) error {
+	userKey := d.keyBuilder.UserPools(userID)
+	key := d.keyBuilder.Pool(id)
+
+	return d.db.Watch(ctx, func(tx *redis.Tx) error {
+		if err := d.db.Del(ctx, d.keyBuilder.Pool(id)).Err(); err != nil {
+			return err
+		}
+
+		return tx.SPop(ctx, userKey).Err()
+	}, key, userKey)
 }
 
 func (d *db) UserHasPool(ctx context.Context, id uuid.UUID, userID uuid.UUID) (ok bool, err error) {
@@ -146,9 +155,9 @@ func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, err
 
 	prefix := d.keyBuilder.Pools()
 
-	pools := make([]common.Pool, len(poolKeys))
+	pools := make([]common.Pool, 0, len(poolKeys))
 
-	for i, key := range poolKeys {
+	for _, key := range poolKeys {
 		if len(key) < 4 {
 			return nil, common.ErrInvalidPoolID
 		}
@@ -162,6 +171,10 @@ func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, err
 
 		data, err := d.db.Get(ctx, key).Bytes()
 		if err != nil {
+			if errors.Is(err, redis.Nil) {
+				continue
+			}
+
 			return nil, err
 		}
 
@@ -169,11 +182,11 @@ func (d *db) ListPool(ctx context.Context, userID uuid.UUID) ([]common.Pool, err
 			return nil, err
 		}
 
-		pools[i] = common.Pool{
+		pools = append(pools, common.Pool{
 			ID:           id,
 			PoolMetadata: common.PoolMetadata{CleanerUserID: userID},
 			PoolData:     pool,
-		}
+		})
 	}
 
 	return pools, nil
