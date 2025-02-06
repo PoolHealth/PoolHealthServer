@@ -10,11 +10,10 @@ import (
 	"os/signal"
 
 	gql "github.com/99designs/gqlgen/graphql"
-	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
 	"github.com/sirupsen/logrus"
-	"go.elastic.co/ecslogrus"
 
 	"github.com/PoolHealth/PoolHealthServer/internal/adapters/sheets"
 	"github.com/PoolHealth/PoolHealthServer/internal/repo/influx"
@@ -66,13 +65,7 @@ func main() {
 		panic(err)
 	}
 
-	logrusLogger := logrus.New()
-	logrusLogger.SetLevel(cfg.LoggerLevel)
-
-	logrusLogger.SetFormatter(&nested.Formatter{
-		FieldsOrder:     []string{pkgKey},
-		TimestampFormat: "01-02|15:04:05",
-	})
+	zeroLogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 
@@ -80,11 +73,11 @@ func main() {
 		cancel()
 	}()
 
-	if cfg.LogToEcs {
-		logrusLogger.SetFormatter(&ecslogrus.Formatter{})
+	if !cfg.LogToEcs {
+		zeroLogger = zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
 	}
 
-	logger := log.NewLogger(logrusLogger)
+	logger := log.NewZerologLogger(&zeroLogger)
 
 	db := redis.NewClient(&redis.Options{Addr: cfg.RedisAddress})
 	repo := repoRedis.NewDB(db, logger.WithField(pkgKey, "repo"))
