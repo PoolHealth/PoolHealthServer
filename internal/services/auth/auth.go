@@ -23,7 +23,7 @@ import (
 
 const (
 	userCtxKey      = "user"
-	JwtDurationHour = 24
+	JwtDurationHour = 24 * 30
 )
 
 var signingMethod = jwt.SigningMethodES256
