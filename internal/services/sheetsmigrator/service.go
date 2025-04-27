@@ -100,6 +100,7 @@ func (m *Migrator) migrate(id uuid.UUID, userID uuid.UUID, sheetID string) {
 	if err != nil {
 		m.changeStatus(id, userID, common.MigrationStatusFailed)
 		m.lg.WithError(err).Error("Get pools from sheet")
+
 		return
 	}
 

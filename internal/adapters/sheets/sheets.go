@@ -361,6 +361,12 @@ func parseDate(el any, year int) (time.Time, error) {
 		return date, nil
 	}
 
+	date, err = time.Parse("02/1", value)
+	if err == nil {
+		date = date.AddDate(year, 0, 0)
+		return date, nil
+	}
+
 	date, err = time.Parse("2/01", value)
 	if err == nil {
 		date = date.AddDate(year, 0, 0)
