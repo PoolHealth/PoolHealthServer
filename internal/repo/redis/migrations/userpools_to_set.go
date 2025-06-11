@@ -32,6 +32,9 @@ func (u UserPoolToSet) Up(ctx context.Context, tr *redis.Tx) error {
 			userPools := make([]string, 0)
 
 			data, err := tr.Get(ctx, key).Bytes()
+			if err != nil {
+				return err
+			}
 
 			if data != nil {
 				if err = json.Unmarshal(data, &userPools); err != nil {

@@ -11,12 +11,6 @@ const (
 	AlkalinityHigh = 120
 )
 
-var chlorineLowByUsage = map[common.UsageType]float64{
-	common.UsageTypePrivate: 1,
-	common.UsageTypePublic:  3,
-	common.UsageTypeHoliday: 1,
-}
-
 var chlorineHighByUsage = map[common.UsageType]float64{
 	common.UsageTypePrivate: 3.0,
 	common.UsageTypePublic:  5,
