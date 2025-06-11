@@ -55,7 +55,7 @@ func NewMigrator(
 	}
 }
 
-func (m *Migrator) Migrate(_ context.Context, userID uuid.UUID, sheetID string) uuid.UUID {
+func (m *Migrator) Migrate(ctx context.Context, userID uuid.UUID, sheetID string) uuid.UUID {
 	id := uuid.New()
 
 	m.mu.Lock()
@@ -73,7 +73,7 @@ func (m *Migrator) Migrate(_ context.Context, userID uuid.UUID, sheetID string) 
 		Status: common.MigrationStatusPending,
 	}
 
-	go m.migrate(id, userID, sheetID)
+	go m.migrate(ctx, id, userID, sheetID)
 	m.mu.Unlock()
 
 	return id
@@ -92,8 +92,8 @@ func (m *Migrator) Migration(ctx context.Context, userID, id uuid.UUID) (common.
 	return common.Migration{ID: id, Status: common.MigrationStatusUnknown}, nil
 }
 
-func (m *Migrator) migrate(id uuid.UUID, userID uuid.UUID, sheetID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+func (m *Migrator) migrate(ctx context.Context, id uuid.UUID, userID uuid.UUID, sheetID string) {
+	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
 	pools, err := m.sheetAdapter.GetPools(ctx, sheetID)

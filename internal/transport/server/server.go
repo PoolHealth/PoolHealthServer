@@ -46,7 +46,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		newCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		newCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		if err := server.Shutdown(newCtx); err != nil {
 			s.log.Error(err)

@@ -28,6 +28,11 @@ const (
 
 var signingMethod = jwt.SigningMethodES256
 
+var (
+	ErrAppleVerify = errors.New("apple verification failed")
+	ErrEmptyBlock  = errors.New("empty block after decoding")
+)
+
 type Auth interface {
 	Auth(ctx context.Context, token string) (*common.Session, error)
 	Validate(ctx context.Context, jwt string) (*common.User, error)
@@ -129,7 +134,7 @@ func (a *auth) Auth(ctx context.Context, token string) (*common.Session, error) 
 			WithField("vreq", vReq).
 			Error("Error from apple on VerifyAppToken")
 
-		return nil, errors.New(resp.ErrorDescription)
+		return nil, fmt.Errorf("%w: %s", ErrAppleVerify, resp.ErrorDescription)
 	}
 
 	claims, err := apple.GetClaims(resp.IDToken)
@@ -189,7 +194,7 @@ func (a *auth) Auth(ctx context.Context, token string) (*common.Session, error) 
 func (a *auth) getSecret() (any, error) {
 	block, _ := pem.Decode([]byte(a.cfg.Secret))
 	if block == nil {
-		return "", errors.New("empty block after decoding")
+		return "", ErrEmptyBlock
 	}
 
 	return x509.ParsePKCS8PrivateKey(block.Bytes)

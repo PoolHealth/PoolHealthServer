@@ -12,6 +12,11 @@ import (
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
 )
 
+var (
+	ErrNoSettings  = errors.New("can't recommend chemicals without settings")
+	ErrNoUsageType = errors.New("can't recommend chemicals without usage type")
+)
+
 type repo interface {
 	GetPool(ctx context.Context, id uuid.UUID) (*common.Pool, error)
 	GetSettings(ctx context.Context, poolID uuid.UUID) (*common.PoolSettings, error)
@@ -57,11 +62,11 @@ func (e *Estimator) RecommendedChemicals(ctx context.Context, poolID uuid.UUID) 
 	}
 
 	if settings == nil {
-		return nil, errors.New("can't recommend chemicals without settings")
+		return nil, ErrNoSettings
 	}
 
 	if settings.UsageType == common.UsageTypeUnknown {
-		return nil, errors.New("can't recommend chemicals without usage type")
+		return nil, ErrNoUsageType
 	}
 
 	highTarget := chlorineHighByUsage[settings.UsageType]

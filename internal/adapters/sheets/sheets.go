@@ -17,9 +17,16 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 
+	stdErrors "errors"
+
 	"github.com/PoolHealth/PoolHealthServer/common"
 	"github.com/PoolHealth/PoolHealthServer/internal/models"
 	"github.com/PoolHealth/PoolHealthServer/pkg/log"
+)
+
+var (
+	ErrValueToFloat  = stdErrors.New("failed to convert value to float")
+	ErrValueToString = stdErrors.New("failed to convert value to string")
 )
 
 type SheetClient struct {
@@ -340,19 +347,19 @@ func getFloat(el any) (null.Float, error) {
 		}
 		val, err := strconv.ParseFloat(strings.Replace(v, ",", ".", 1), 64)
 		if err != nil {
-			return null.Float{}, errors.Wrap(err, "failed to convert value to float")
+			return null.Float{}, errors.Wrap(err, ErrValueToFloat.Error())
 		}
 
 		return null.FloatFrom(val), nil
 	}
 
-	return null.Float{}, fmt.Errorf("failed to convert value %v whith type %T to float", el, el)
+	return null.Float{}, fmt.Errorf("%w: %v type %T", ErrValueToFloat, el, el)
 }
 
 func parseDate(el any, year int) (time.Time, error) {
 	value, ok := el.(string)
 	if !ok {
-		return time.Time{}, fmt.Errorf("failed to convert value %v whith type %T to string", el, el)
+		return time.Time{}, fmt.Errorf("%w: %v type %T", ErrValueToString, el, el)
 	}
 
 	date, err := time.Parse("02/01", value)
@@ -393,7 +400,12 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		cerr := f.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
 	tok := &oauth2.Token{}
 	err = json.NewDecoder(f).Decode(tok)
 	return tok, err

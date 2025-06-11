@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	stdErrors "errors"
+
 	"github.com/google/uuid"
 )
 
 type ID uuid.UUID
+
+var ErrNonStringUUID = stdErrors.New("uuid is not a string")
 
 func (id ID) MarshalGQL(w io.Writer) {
 	str := uuid.UUID(id).String()
@@ -28,6 +32,6 @@ func (id *ID) UnmarshalGQL(v interface{}) error {
 
 		return nil
 	default:
-		return fmt.Errorf("%T is not a string", v)
+		return fmt.Errorf("%w: %T", ErrNonStringUUID, v)
 	}
 }
