@@ -6,6 +6,8 @@ import (
 	"github.com/PoolHealth/PoolHealthServer/common"
 )
 
+var ErrUnknownActionType = errors.New("unknown action type")
+
 func (a ActionType) ToCommon() common.ActionType {
 	switch a {
 	case ActionTypeNet:
@@ -44,7 +46,7 @@ func ActionTypeFromCommon(a common.ActionType) (ActionType, error) {
 	case common.ActionSkimmerBasketClean:
 		return ActionTypeSkimmerBasketClean, nil
 	default:
-		return "", errors.New("unknown action type")
+		return "", ErrUnknownActionType
 	}
 }
 

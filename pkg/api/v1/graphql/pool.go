@@ -7,6 +7,13 @@ import (
 	gqlCommon "github.com/PoolHealth/PoolHealthServer/pkg/api/v1/common"
 )
 
+var (
+	ErrUnknownPoolType     = errors.New("unknown pool type")
+	ErrUnknownUsageType    = errors.New("unknown usage type")
+	ErrUnknownLocationType = errors.New("unknown location type")
+	ErrUnknownPoolShape    = errors.New("unknown pool shape")
+)
+
 func PoolFromCommon(pool *common.Pool) *Pool {
 	if pool == nil {
 		return nil
@@ -145,7 +152,7 @@ func PoolTypeFromCommon(poolType common.PoolType) (PoolType, error) {
 	case common.PoolTypeSkimmer:
 		return PoolTypeSkimmer, nil
 	default:
-		return "", errors.New("unknown pool type")
+		return "", ErrUnknownPoolType
 	}
 }
 
@@ -158,7 +165,7 @@ func UsageTypeFromCommon(usageType common.UsageType) (UsageType, error) {
 	case common.UsageTypeHoliday:
 		return UsageTypeHoliday, nil
 	default:
-		return "", errors.New("unknown usage type")
+		return "", ErrUnknownUsageType
 	}
 }
 
@@ -169,7 +176,7 @@ func LocationTypeFromCommon(locationType common.LocationType) (LocationType, err
 	case common.LocationTypeOutdoor:
 		return LocationTypeOutdoor, nil
 	default:
-		return "", errors.New("unknown location type")
+		return "", ErrUnknownLocationType
 	}
 }
 
@@ -190,7 +197,7 @@ func PoolShapeFromCommon(shape common.PoolShape) (PoolShape, error) {
 	case common.PoolShapeFreeForm:
 		return PoolShapeFreeForm, nil
 	default:
-		return "", errors.New("unknown pool shape")
+		return "", ErrUnknownPoolShape
 	}
 }
 
