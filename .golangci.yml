@@ -147,7 +147,7 @@ linters:
     # Stylecheck is a replacement for golint.
     - stylecheck
     # The tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
-    - tenv
+    - usetesting
     # Like the front-end of a Go compiler, parses and type-checks Go code.
     - typecheck
     # The thelper detects Go test helpers without t.Helper() call and checks the consistency of test helpers.

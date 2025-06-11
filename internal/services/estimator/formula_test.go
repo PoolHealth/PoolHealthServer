@@ -52,13 +52,10 @@ func TestCalculateChlorine(t *testing.T) {
 			want: 4.012,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := CalculateChlorine(tt.args.volume, tt.args.lastMeasurement, tt.args.lastAdditives)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CalculateChlorine() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := CalculateChlorine(tt.args.volume, tt.args.lastMeasurement.Chlorine.Float64, nil)
 			roundedGot := math.Floor(got*1000) / 1000
 			if roundedGot != tt.want {
 				t.Errorf("CalculateChlorine() got = %v, want %v", roundedGot, tt.want)
